@@ -20,6 +20,8 @@ npm run build     # 类型检查并生成 dist/
 npm run preview   # 预览构建产物
 npm test          # 编码、识别、纠错、EPUB 结构与内容测试
 npm run test:scale # 1/10/20/51 MiB、Worker 导入逻辑及 16000 章节验收
+npm run format    # 格式化源码、样式及文档
+npm run format:check # 检查格式，不修改文件
 ```
 
 `dist/` 可部署到静态托管服务，无需后端。请通过 HTTP(S) 访问，直接双击 HTML 文件不支持 Worker 和模块加载。
@@ -56,7 +58,7 @@ npm run test:scale # 1/10/20/51 MiB、Worker 导入逻辑及 16000 章节验收
 
 浏览器操作已验证示例导入、误判合并、撤销、重做、自定义规则重算和实际下载。浏览器生成的示例文件通过 EPUBCheck 5.4.0：0 fatal、0 error、0 warning。
 
-另已通过 1/10/20/51 MiB 和 16,000 章节规模测试，Worker 导入逻辑使用真实 51 MiB 文件完成读取和预览验证。浏览器已验证恰好 20 MiB 文件的导入、取消导出和重新导出；已验证的导出样本通过 EPUBCheck。详情见 [VALIDATION.md](VALIDATION.md)。
+另已通过 1/10/20/51 MiB 和 16,000 章节规模测试，Worker 导入逻辑使用真实 51 MiB 文件完成读取和预览验证。浏览器已验证恰好 20 MiB 文件的导入、取消导出和重新导出；已验证的导出样本通过 EPUBCheck。详情见 [验收记录](docs/VALIDATION.md)。
 
 如已安装 EPUBCheck，可在本机检查导出文件：
 
@@ -73,11 +75,25 @@ java -jar /path/to/epubcheck.jar /path/to/book.epub
 React + TypeScript + Vite，fflate 打包 EPUB；核心解析和导出与 UI 分离。
 
 ```text
-src/core/          文本解码、章节识别、源文区间、EPUB 生成
-src/workers/       文档 Worker 与进度、取消
-src/components/    章节目录、识别规则、弹窗
-src/App.tsx        导入、预览、纠错历史与导出流程
-tests/             核心、EPUB 结构、规模验证
+src/
+  app/             页面组合、文档会话流程、本地规则偏好
+  components/      导入、目录、规则、预览、文件信息及弹窗
+  core/            编码识别、目录构建、段落清理、数据模型和默认规则
+    epub/          打包流程、文档模板、XML 校验与转义
+  workers/         Worker 入口、消息协议、主线程客户端
+  lib/             浏览器下载和显示格式工具
+  examples/        应用内的示例小说
+  styles/          全局、工作台、阅读区、面板和响应式样式
+  config.ts        文件提示阈值、编码选项等应用配置
+  main.tsx         应用入口
+tests/
+  core/            编码、章节及 EPUB 测试
+  components/      界面提示测试
+  workers/         Worker 导入测试
+  scale/           大文件及高章节数验收
+docs/              技术方案、验收记录和结构说明
 ```
 
-详细需求决定、架构和验收标准见 [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md)。
+详细需求决定、架构和验收标准见 [技术方案](docs/TECHNICAL_DESIGN.md)，目录职责及本次整理说明见 [项目结构](docs/STRUCTURE.md)。
+
+`node_modules/`、`.npm-cache/`、`dist/`、`artifacts/` 属于本地依赖、缓存或生成产物，均不纳入 Git。`artifacts/` 仅在测试或验证时生成。源码和页面样式使用 Prettier 统一格式；构建前直接检查类型，不再在根目录产生 TypeScript 构建状态文件。

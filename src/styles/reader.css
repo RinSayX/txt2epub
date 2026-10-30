@@ -1,0 +1,171 @@
+.chapter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  border-bottom: 1px solid #eef0e7;
+  padding: 8px 24px;
+}
+.chapter-location {
+  font-size: 10px;
+  color: #a4ad98;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+}
+.chapter-location > span {
+  white-space: nowrap;
+}
+.chapter-location strong {
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #7c8b6c;
+}
+.merge-button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid #e2e7d9;
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 6px 9px;
+  color: #7f8e6d;
+  white-space: nowrap;
+}
+.merge-button:hover:not(:disabled) {
+  background: #f0f4e7;
+  color: #52733c;
+}
+.paper-scroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #dce1d2 transparent;
+  background: linear-gradient(90deg, #fafaf4 0%, #fffefa 3%, #fffefa 97%, #fafaf5 100%);
+}
+.book-page {
+  max-width: 790px;
+  padding: 38px 60px 20px;
+  margin: auto;
+  font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', Georgia, serif;
+  line-height: 2.05;
+  color: #4d5749;
+  overflow-wrap: anywhere;
+}
+.chapter-ornament {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a6b497;
+  font-family: Georgia, serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+.chapter-ornament > span {
+  width: 30px;
+  height: 1px;
+  background: #e0e5d6;
+}
+.book-page h2 {
+  font-family: inherit;
+  font-size: 1.45em;
+  font-weight: 600;
+  letter-spacing: 1px;
+  line-height: 1.65;
+  margin: 18px 0;
+  color: #3f4f37;
+}
+.book-divider {
+  height: 1px;
+  background: #e8ebdf;
+  width: 35px;
+  margin-bottom: 29px;
+}
+.prose p {
+  white-space: pre-wrap;
+  margin: 0;
+  min-height: 1em;
+}
+.prose p.blank-line {
+  line-height: 1;
+  min-height: 1em;
+}
+.page-end {
+  text-align: center;
+  letter-spacing: 8px;
+  font-size: 13px;
+  color: #b9c1ac;
+  margin-top: 34px;
+}
+.no-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  color: #a6af98;
+  font-size: 11px;
+  line-height: 2;
+}
+.reader-footer {
+  height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+  background: #fffefa;
+}
+.reader-footer > span {
+  font:
+    10px Georgia,
+    serif;
+  color: #9aa78b;
+  letter-spacing: 1px;
+}
+.reader-footer em {
+  font:
+    9px -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    sans-serif;
+  margin-left: 13px;
+  font-style: normal;
+  color: #9aa58f;
+}
+.reader-footer .text-button {
+  font-size: 10px;
+}
+.chapter-warning {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  max-width: 680px;
+  margin: 17px auto 0;
+  background: #f7f3e6;
+  border: 1px solid #ece5cb;
+  color: #a38e54;
+  border-radius: 5px;
+  padding: 9px 12px;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.preview-loading {
+  font:
+    12px -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #95a287;
+  margin: 20px 0;
+}
+.load-more {
+  display: flex;
+  margin: 25px auto 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+}

@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:scale": "RUN_SCALE=1 vitest run tests/scale.test.ts tests/import.test.ts"
+    "test:scale": "RUN_SCALE=1 vitest run tests/scale tests/workers",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "fflate": "^0.8.2",
@@ -23,6 +25,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "@xmldom/xmldom": "^0.9.8",
+    "prettier": "3.9.10",
     "typescript": "~5.9.3",
     "vite": "8.3.5",
     "vitest": "5.0.5"

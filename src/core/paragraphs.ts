@@ -16,7 +16,12 @@ export function chapterContentEnd(text: string, start: number, end: number): num
   return start;
 }
 
-export function previewParagraphs(text: string, bodyStart: number, start: number, end: number): string {
+export function previewParagraphs(
+  text: string,
+  bodyStart: number,
+  start: number,
+  end: number,
+): string {
   // A preview can start mid-paragraph. Only strip its prefix when the original
   // characters before it are indentation, never when they are interior spaces.
   let previous = start - 1;

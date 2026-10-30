@@ -1,0 +1,33 @@
+import { ShieldCheck } from 'lucide-react';
+import Dialog from './Dialog';
+
+export default function HelpDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <Dialog title="从纯文本，到一本书" onClose={onClose}>
+      <div className="help-content">
+        <p>
+          <b>1. 导入小说</b>选择 TXT 文件，超过 50 MiB
+          时会提示，仍可继续导入。如果预览出现乱码，在文件信息栏切换编码。
+        </p>
+        <p>
+          <b>2. 调整章节</b>
+          在“识别规则”配置关键词和层级，数字越小层级越高。点击应用后，目录会重新生成。
+        </p>
+        <p>
+          <b>3. 纠正误判</b>
+          选中误识别的标题，点击“并入上一节”。原标题行会保留为正文，子章节也会保留；支持撤销和重做。
+        </p>
+        <p>
+          <b>4. 导出 EPUB</b>填写书名与可选作者，下载 EPUB3。附带 NCX
+          目录，实际兼容性请用目标阅读器确认。
+        </p>
+        <div className="help-privacy">
+          <ShieldCheck size={20} />
+          <span>
+            小说不上传，也不会保存到本地持久存储。刷新或关闭页面后需重新导入。仅识别规则会保存在当前浏览器。
+          </span>
+        </div>
+      </div>
+    </Dialog>
+  );
+}

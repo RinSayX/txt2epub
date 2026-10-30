@@ -1,42 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { buildOutline, sectionPreview, validateRules } from '../src/core/outline';
-import { decodeText } from '../src/core/text';
-import { DEFAULT_RULES } from '../src/core/types';
-
-describe('TXT decoding', () => {
-  it('detects UTF-8, removes BOM and normalizes only line endings', () => {
-    const bytes = new TextEncoder().encode('\uFEFF第一章 风\r\n　正文\r下一行\n');
-    expect(decodeText(bytes)).toEqual({ text: '第一章 风\n　正文\n下一行\n', encoding: 'utf-8', uncertain: false });
-  });
-  it('decodes GB18030 and allows an explicit encoding override', () => {
-    const bytes = new Uint8Array([0xd6, 0xd0, 0xce, 0xc4]);
-    expect(decodeText(bytes, 'gbk').text).toBe('中文');
-    expect(decodeText(bytes).encoding).toBe('gb18030');
-    expect(decodeText(bytes).uncertain).toBe(true);
-  });
-  it('decodes Big5 without losing characters', () => {
-    expect(decodeText(new Uint8Array([0xa4, 0xa4, 0xa4, 0xe5]), 'big5').text).toBe('中文');
-  });
-  it('detects both UTF-16 byte orders from BOM', () => {
-    expect(decodeText(new Uint8Array([0xff, 0xfe, 0x2d, 0x4e])).text).toBe('中');
-    expect(decodeText(new Uint8Array([0xfe, 0xff, 0x4e, 0x2d])).text).toBe('中');
-  });
-  it('rejects empty, whitespace-only and malformed explicitly encoded input', () => {
-    expect(() => decodeText(new Uint8Array())).toThrow('空');
-    expect(() => decodeText(new TextEncoder().encode(' \n\t'))).toThrow('空白');
-    expect(() => decodeText(new Uint8Array([0xff]), 'utf-8')).toThrow('完整解码');
-  });
-});
+import { buildOutline, sectionPreview, validateRules } from '../../src/core/outline';
+import { DEFAULT_RULES } from '../../src/core/rules';
 
 describe('chapter identification and corrections', () => {
   it('supports missing hierarchy levels, number forms and literal custom keywords', async () => {
-    const outline = await buildOutline('第一卷 风\n\n第１２章 雨\n内容\n第一章 夜\n第2篇+ 归来\n正文', [...DEFAULT_RULES, { id: 'custom', keyword: '篇+', level: 2, kind: 'numbered', enabled: true }]);
-    expect(outline.sections.map((section) => [section.title, section.depth, section.parentId])).toEqual([
-      ['第一卷 风', 0, null], ['第１２章 雨', 1, 'line-0'], ['第一章 夜', 1, 'line-0'], ['第2篇+ 归来', 1, 'line-0'],
+    const outline = await buildOutline(
+      '第一卷 风\n\n第１２章 雨\n内容\n第一章 夜\n第2篇+ 归来\n正文',
+      [
+        ...DEFAULT_RULES,
+        { id: 'custom', keyword: '篇+', level: 2, kind: 'numbered', enabled: true },
+      ],
+    );
+    expect(
+      outline.sections.map((section) => [section.title, section.depth, section.parentId]),
+    ).toEqual([
+      ['第一卷 风', 0, null],
+      ['第１２章 雨', 1, 'line-0'],
+      ['第一章 夜', 1, 'line-0'],
+      ['第2篇+ 归来', 1, 'line-0'],
     ]);
   });
   it('requires independent unnumbered headings with an optional explicit delimiter', async () => {
-    const outline = await buildOutline('楔子\n故事\n番外的故事尚未开始\n他读到了第十二章\n番外：重逢\n结束', DEFAULT_RULES);
+    const outline = await buildOutline(
+      '楔子\n故事\n番外的故事尚未开始\n他读到了第十二章\n番外：重逢\n结束',
+      DEFAULT_RULES,
+    );
     expect(outline.sections.map((section) => section.title)).toEqual(['楔子', '番外：重逢']);
   });
   it('preserves the dismissed heading as body and reparents its children', async () => {
@@ -44,7 +32,11 @@ describe('chapter identification and corrections', () => {
     const initial = await buildOutline(text, DEFAULT_RULES);
     expect(initial.sections.at(-1)?.parentId).toBe('line-3');
     const merged = await buildOutline(text, DEFAULT_RULES, new Set([3]));
-    expect(merged.sections.map((section) => section.title)).toEqual(['第一卷 开端', '第一章 相逢', '第二章 夜雨']);
+    expect(merged.sections.map((section) => section.title)).toEqual([
+      '第一卷 开端',
+      '第一章 相逢',
+      '第二章 夜雨',
+    ]);
     expect(merged.sections.at(-1)?.parentId).toBe('line-0');
     expect(sectionPreview(text, merged.sections[1]).text).toBe('正文 A\n第二卷 正文引用\n正文 B');
     expect(await buildOutline(text, DEFAULT_RULES)).toEqual(initial);
@@ -62,17 +54,24 @@ describe('chapter identification and corrections', () => {
   it('uses nonoverlapping source ranges and preserves preface, whitespace and every character', async () => {
     const text = '　前言\n\n第一卷 天\n引言\n\n第一章 雨\n　正文 <&>\n\n第二章 风\n尾行\n';
     const outline = await buildOutline(text, DEFAULT_RULES);
-    const reconstructed = outline.sections.map((section) => {
-      const heading = text.slice(section.headingStart, section.bodyStart);
-      return heading + text.slice(section.bodyStart, section.bodyEnd);
-    }).join('');
+    const reconstructed = outline.sections
+      .map((section) => {
+        const heading = text.slice(section.headingStart, section.bodyStart);
+        return heading + text.slice(section.bodyStart, section.bodyEnd);
+      })
+      .join('');
     expect(reconstructed).toBe(text);
     expect(outline.sections[0].title).toBe('前言');
     expect(outline.sections[1].bodyEnd).toBe(outline.sections[2].headingStart);
   });
   it('keeps source order, supports sibling aliases and never invents absent levels', async () => {
-    const rules = DEFAULT_RULES.map((rule) => rule.keyword === '回' ? { ...rule, level: 3 } : rule);
-    const outline = await buildOutline('第一卷 甲\n第9章 九\n第2回 二\n第二卷 乙\n第一章 一', rules);
+    const rules = DEFAULT_RULES.map((rule) =>
+      rule.keyword === '回' ? { ...rule, level: 3 } : rule,
+    );
+    const outline = await buildOutline(
+      '第一卷 甲\n第9章 九\n第2回 二\n第二卷 乙\n第一章 一',
+      rules,
+    );
     expect(outline.sections.map((section) => section.depth)).toEqual([0, 1, 1, 0, 1]);
     expect(outline.sections[2].parentId).toBe('line-0');
     expect(outline.sections[4].parentId).toBe('line-3');
@@ -92,22 +91,37 @@ describe('chapter identification and corrections', () => {
     const { sections } = await buildOutline(text, DEFAULT_RULES);
     let offset: number | null = 0;
     let result = '';
-    while (offset !== null) { const page = sectionPreview(text, sections[0], offset, 5000); result += page.text; offset = page.nextOffset; }
+    while (offset !== null) {
+      const page = sectionPreview(text, sections[0], offset, 5000);
+      result += page.text;
+      offset = page.nextOffset;
+    }
     expect(result).toBe(text.slice(sections[0].bodyStart));
   });
   it('cleans preview indentation and chapter endings while preserving internal blank lines and original source ranges', async () => {
-    const text = '第一章 风\n　　首段  内部空格  \n\n \t\n\t　二段\t内\t \n\n　\t\n第二章 雨\n  尾段\n\n';
+    const text =
+      '第一章 风\n　　首段  内部空格  \n\n \t\n\t　二段\t内\t \n\n　\t\n第二章 雨\n  尾段\n\n';
     const { sections } = await buildOutline(text, DEFAULT_RULES);
     expect(sectionPreview(text, sections[0]).text).toBe('首段  内部空格  \n\n\n二段\t内\t ');
     expect(sectionPreview(text, sections[1]).text).toBe('尾段');
-    expect(text.slice(sections[0].bodyStart, sections[0].bodyEnd)).toBe('　　首段  内部空格  \n\n \t\n\t　二段\t内\t \n\n　\t\n');
+    expect(text.slice(sections[0].bodyStart, sections[0].bodyEnd)).toBe(
+      '　　首段  内部空格  \n\n \t\n\t　二段\t内\t \n\n　\t\n',
+    );
     const blank = '第一卷 空卷\n \t　\n\n';
     const blankSection = (await buildOutline(blank, DEFAULT_RULES)).sections[0];
-    expect(sectionPreview(blank, blankSection)).toEqual({ text: '', nextOffset: null, totalCharacters: 0 });
+    expect(sectionPreview(blank, blankSection)).toEqual({
+      text: '',
+      nextOffset: null,
+      totalCharacters: 0,
+    });
   });
   it('cleans paginated paragraphs without treating a mid-paragraph page boundary as indentation', async () => {
     for (const [body, expected, limit] of [
-      ['a'.repeat(4998) + '   内部空格' + '雨'.repeat(5000) + '\n\t　新段\n\n', 'a'.repeat(4998) + '   内部空格' + '雨'.repeat(5000) + '\n新段', 5000],
+      [
+        'a'.repeat(4998) + '   内部空格' + '雨'.repeat(5000) + '\n\t　新段\n\n',
+        'a'.repeat(4998) + '   内部空格' + '雨'.repeat(5000) + '\n新段',
+        5000,
+      ],
       [' '.repeat(40) + '正文'.repeat(1000), '正文'.repeat(1000), 20],
     ] as const) {
       const source = `第一章 长文\n${body}`;
@@ -123,6 +137,10 @@ describe('chapter identification and corrections', () => {
     }
   });
   it('can cancel analysis before producing a new outline', async () => {
-    await expect(buildOutline('正文\n'.repeat(5000), DEFAULT_RULES, new Set(), 60, async () => { throw new Error('cancelled'); })).rejects.toThrow('cancelled');
+    await expect(
+      buildOutline('正文\n'.repeat(5000), DEFAULT_RULES, new Set(), 60, async () => {
+        throw new Error('cancelled');
+      }),
+    ).rejects.toThrow('cancelled');
   });
 });

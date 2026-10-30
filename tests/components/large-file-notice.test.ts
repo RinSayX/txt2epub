@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import LargeFileNotice from '../src/components/LargeFileNotice';
+import LargeFileNotice from '../../src/components/LargeFileNotice';
 
 describe('large file notice', () => {
   it('shows no notice up to and including exactly 50 MiB', () => {
@@ -19,6 +19,8 @@ describe('large file notice', () => {
       expect(markup).not.toContain('<dialog');
       expect(markup).not.toContain('<button');
     }
-    expect(renderToStaticMarkup(createElement(LargeFileNotice, { size: 51 * 1024 ** 2 }))).toContain('51.0 MiB');
+    expect(
+      renderToStaticMarkup(createElement(LargeFileNotice, { size: 51 * 1024 ** 2 })),
+    ).toContain('51.0 MiB');
   });
 });

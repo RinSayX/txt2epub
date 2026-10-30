@@ -29,11 +29,11 @@
 
 使用 W3C 官方 EPUBCheck 5.4.0 在本机验证，未上传任何 TXT 或 EPUB：
 
-| 样本 | 来源 | 结果 |
-| --- | --- | --- |
-| 山川来信.epub | 浏览器导入示例、纠错后下载 | 0 fatal / 0 error / 0 warning / 0 info |
-| scale-20MiB.epub | 规模测试核心模块生成 | 0 fatal / 0 error / 0 warning / 0 info |
-| qa-20MiB.epub | 浏览器导入恰好 20 MiB 文件，取消后重新导出 | 0 fatal / 0 error / 0 warning / 0 info |
+| 样本             | 来源                                       | 结果                                   |
+| ---------------- | ------------------------------------------ | -------------------------------------- |
+| 山川来信.epub    | 浏览器导入示例、纠错后下载                 | 0 fatal / 0 error / 0 warning / 0 info |
+| scale-20MiB.epub | 规模测试核心模块生成                       | 0 fatal / 0 error / 0 warning / 0 info |
+| qa-20MiB.epub    | 浏览器导入恰好 20 MiB 文件，取消后重新导出 | 0 fatal / 0 error / 0 warning / 0 info |
 
 EPUBCheck 5.4.0 本次输出使用 EPUB 3.4 规则验证；生成器的 OPF 版本为 `3.0`，采用基础 EPUB3 内容与 NCX 兼容目录。没有指定目标旧阅读器，尚未进行阅读器实机兼容验证。
 
@@ -70,3 +70,12 @@ EPUBCheck 5.4.0 本次输出使用 EPUB 3.4 规则验证；生成器的 OPF 版�
 - Worker 导入处理逻辑在 Node 测试环境中读取实际 51 MiB 的 File，章节识别与分页预览通过；另验证超过旧上限和提示阈值的文件元数据不会触发拒绝。
 - 扩展规模测试至 1/10/20/51 MiB，逐一检查章节和正文段落完整性；35 项测试（`RUN_SCALE=1 npm test`）及生产构建通过。
 - 新生成的约 51 MiB 文本规模样本（2,786 章、557,200 个正文段落）通过 EPUBCheck 5.4.0：0 fatal / 0 error / 0 warning / 0 info。
+
+## 项目结构整理
+
+- 页面、会话流程、偏好存储、下载工具分别归位；数据模型、默认规则、应用配置与 Worker 协议分离。
+- EPUB 打包编排、文档模板和 XML 工具拆分；CSS 按原有级联顺序拆分，源码使用 Prettier 统一格式。
+- 测试按核心、组件、Worker、规模分类，原有 35 项测试全部通过，测试数量与行为断言保持一致。
+- `npm run format:check`、`npm run build` 通过；生产构建验证了移动后的 Worker 加载及示例导入、合并、撤销、重做、预览、实际 EPUB 下载。
+- 浏览器 warning/error 日志为空；下载的“山川来信结构整理验证.epub”通过 EPUBCheck 5.4.0：0 fatal / 0 error / 0 warning / 0 info。
+- README 与 docs 中的本地文档链接检查通过。回归截图：`artifacts/structure-preview.png`。结构与取舍说明见 [STRUCTURE.md](STRUCTURE.md)。

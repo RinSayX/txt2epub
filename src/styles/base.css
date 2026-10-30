@@ -1,0 +1,73 @@
+:root {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #29352d;
+  background: #f7f7f2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+  --green: #35634a;
+  --green-dark: #264b37;
+  --muted: #8b938b;
+  --line: #e7e9e1;
+  --soft: #f0f3eb;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 360px;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  cursor: pointer;
+}
+button {
+  border: 0;
+  background: none;
+  color: inherit;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #699776;
+  outline-offset: 3px;
+}
+input:focus,
+select:focus {
+  outline: 2px solid #8eaf92;
+  outline-offset: 1px;
+}
+input,
+select {
+  color: #354136;
+}
+input[type='checkbox'] {
+  accent-color: var(--green);
+}
+button svg,
+span svg {
+  flex-shrink: 0;
+}
+input::placeholder {
+  color: #a2a79e;
+}
