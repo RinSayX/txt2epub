@@ -46,7 +46,7 @@ describe('chapter identification and corrections', () => {
     const merged = await buildOutline(text, DEFAULT_RULES, new Set([3]));
     expect(merged.sections.map((section) => section.title)).toEqual(['第一卷 开端', '第一章 相逢', '第二章 夜雨']);
     expect(merged.sections.at(-1)?.parentId).toBe('line-0');
-    expect(sectionPreview(text, merged.sections[1]).text).toBe('正文 A\n第二卷 正文引用\n正文 B\n');
+    expect(sectionPreview(text, merged.sections[1]).text).toBe('正文 A\n第二卷 正文引用\n正文 B');
     expect(await buildOutline(text, DEFAULT_RULES)).toEqual(initial);
   });
   it('supports first-heading dismissal, consecutive merges and rule reapplication without losing text', async () => {
@@ -55,7 +55,7 @@ describe('chapter identification and corrections', () => {
     const outline = await buildOutline(text, DEFAULT_RULES, ignored);
     expect(outline.headingCount).toBe(0);
     expect(outline.sections).toHaveLength(1);
-    expect(sectionPreview(text, outline.sections[0]).text).toBe(text);
+    expect(sectionPreview(text, outline.sections[0]).text).toBe(text.replace('  第一行', '第一行'));
     const revisedRules = DEFAULT_RULES.map((rule) => ({ ...rule, level: rule.level + 1 }));
     expect((await buildOutline(text, revisedRules, ignored)).headingCount).toBe(0);
   });
@@ -94,6 +94,33 @@ describe('chapter identification and corrections', () => {
     let result = '';
     while (offset !== null) { const page = sectionPreview(text, sections[0], offset, 5000); result += page.text; offset = page.nextOffset; }
     expect(result).toBe(text.slice(sections[0].bodyStart));
+  });
+  it('cleans preview indentation and chapter endings while preserving internal blank lines and original source ranges', async () => {
+    const text = '第一章 风\n　　首段  内部空格  \n\n \t\n\t　二段\t内\t \n\n　\t\n第二章 雨\n  尾段\n\n';
+    const { sections } = await buildOutline(text, DEFAULT_RULES);
+    expect(sectionPreview(text, sections[0]).text).toBe('首段  内部空格  \n\n\n二段\t内\t ');
+    expect(sectionPreview(text, sections[1]).text).toBe('尾段');
+    expect(text.slice(sections[0].bodyStart, sections[0].bodyEnd)).toBe('　　首段  内部空格  \n\n \t\n\t　二段\t内\t \n\n　\t\n');
+    const blank = '第一卷 空卷\n \t　\n\n';
+    const blankSection = (await buildOutline(blank, DEFAULT_RULES)).sections[0];
+    expect(sectionPreview(blank, blankSection)).toEqual({ text: '', nextOffset: null, totalCharacters: 0 });
+  });
+  it('cleans paginated paragraphs without treating a mid-paragraph page boundary as indentation', async () => {
+    for (const [body, expected, limit] of [
+      ['a'.repeat(4998) + '   内部空格' + '雨'.repeat(5000) + '\n\t　新段\n\n', 'a'.repeat(4998) + '   内部空格' + '雨'.repeat(5000) + '\n新段', 5000],
+      [' '.repeat(40) + '正文'.repeat(1000), '正文'.repeat(1000), 20],
+    ] as const) {
+      const source = `第一章 长文\n${body}`;
+      const section = (await buildOutline(source, DEFAULT_RULES)).sections[0];
+      let offset: number | null = 0;
+      let result = '';
+      while (offset !== null) {
+        const page = sectionPreview(source, section, offset, limit);
+        result += page.text;
+        offset = page.nextOffset;
+      }
+      expect(result).toBe(expected);
+    }
   });
   it('can cancel analysis before producing a new outline', async () => {
     await expect(buildOutline('正文\n'.repeat(5000), DEFAULT_RULES, new Set(), 60, async () => { throw new Error('cancelled'); })).rejects.toThrow('cancelled');

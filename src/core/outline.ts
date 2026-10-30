@@ -1,4 +1,5 @@
 import type { Checkpoint, HeadingRule, Outline, Section } from './types';
+import { chapterContentEnd, previewParagraphs } from './paragraphs';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -86,14 +87,14 @@ export async function buildOutline(
 }
 
 export function sectionPreview(text: string, section: Section, offset = 0, limit = 18000) {
-  const total = section.bodyEnd - section.bodyStart;
+  const total = chapterContentEnd(text, section.bodyStart, section.bodyEnd) - section.bodyStart;
   const start = Math.max(0, Math.min(offset, total));
   let end = Math.min(total, start + limit);
   if (end < total) {
     const newline = text.indexOf('\n', section.bodyStart + end);
-    if (newline !== -1 && newline < section.bodyEnd && newline - section.bodyStart - end < 2000) end = newline - section.bodyStart + 1;
+    if (newline !== -1 && newline < section.bodyStart + total && newline - section.bodyStart - end < 2000) end = newline - section.bodyStart + 1;
     // Do not split a surrogate pair across preview chunks.
     else if (/[\uD800-\uDBFF]/.test(text[section.bodyStart + end - 1] ?? '')) end--;
   }
-  return { text: text.slice(section.bodyStart + start, section.bodyStart + end), nextOffset: end < total ? end : null, totalCharacters: total };
+  return { text: previewParagraphs(text, section.bodyStart, section.bodyStart + start, section.bodyStart + end), nextOffset: end < total ? end : null, totalCharacters: total };
 }
