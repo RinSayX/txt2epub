@@ -19,14 +19,15 @@ npm run dev
 npm run build     # 类型检查并生成 dist/
 npm run preview   # 预览构建产物
 npm test          # 编码、识别、纠错、EPUB 结构与内容测试
-npm run test:scale # 1/10/20 MiB 与 16000 章节验收（输出到 artifacts/）
+npm run test:scale # 1/10/20/51 MiB、Worker 导入逻辑及 16000 章节验收
 ```
 
 `dist/` 可部署到静态托管服务，无需后端。请通过 HTTP(S) 访问，直接双击 HTML 文件不支持 Worker 和模块加载。
 
 ## 已实现功能
 
-- 导入最大 20 MiB 的 TXT；支持 UTF-8、GBK、GB18030、Big5、UTF-16LE/BE，提供自动判断与手动切换。
+- 支持导入大文件 TXT，不设置文件大小硬上限。仅超过 50 MiB 时提示可能需要更多时间和内存，仍自动继续导入；恰好 50 MiB 不提示。实际处理能力取决于浏览器和设备资源。
+- 支持 UTF-8、GBK、GB18030、Big5、UTF-16LE/BE，提供自动判断与手动切换。
 - 自动识别中文数字、阿拉伯数字、全角数字章节编号。
 - 多层章节目录，默认“卷 → 册 → 章 → 回”；支持关键词增删、启停、层级排序和同级关键词。
 - 支持“序章、楔子、尾声、后记、番外”等无编号标题及带明确分隔符的副标题。
@@ -55,7 +56,7 @@ npm run test:scale # 1/10/20 MiB 与 16000 章节验收（输出到 artifacts/�
 
 浏览器操作已验证示例导入、误判合并、撤销、重做、自定义规则重算和实际下载。浏览器生成的示例文件通过 EPUBCheck 5.4.0：0 fatal、0 error、0 warning。
 
-另已通过 1/10/20 MiB 和 16,000 章节规模测试，并在浏览器中验证恰好 20 MiB 文件的导入、取消导出和重新导出；大样本导出同样通过 EPUBCheck。详情见 [VALIDATION.md](VALIDATION.md)。
+另已通过 1/10/20/51 MiB 和 16,000 章节规模测试，Worker 导入逻辑使用真实 51 MiB 文件完成读取和预览验证。浏览器已验证恰好 20 MiB 文件的导入、取消导出和重新导出；已验证的导出样本通过 EPUBCheck。详情见 [VALIDATION.md](VALIDATION.md)。
 
 如已安装 EPUBCheck，可在本机检查导出文件：
 

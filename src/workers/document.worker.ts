@@ -2,7 +2,7 @@
 import { generateEpub } from '../core/epub';
 import { buildOutline, sectionPreview } from '../core/outline';
 import { decodeText } from '../core/text';
-import { FILE_LIMIT, type DocumentSnapshot, type WorkerRequest, type WorkerResponse } from '../core/types';
+import type { DocumentSnapshot, WorkerRequest, WorkerResponse } from '../core/types';
 
 const worker = self as unknown as DedicatedWorkerGlobalScope;
 let state: { text: string; snapshot: DocumentSnapshot } | null = null;
@@ -25,7 +25,6 @@ worker.onmessage = async ({ data: request }: MessageEvent<WorkerRequest>) => {
   };
   try {
     if (request.type === 'load') {
-      if (request.file.size > FILE_LIMIT) throw new Error('首版支持最大 20 MiB 的 TXT 文件，请缩小文件后重试。');
       await progress(0.02, '读取文件');
       const bytes = new Uint8Array(await request.file.arrayBuffer());
       check();

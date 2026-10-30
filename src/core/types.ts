@@ -64,7 +64,7 @@ export type WorkerResponse =
   | { id: number; type: 'error'; message: string };
 
 export type Checkpoint = (progress: number) => Promise<void>;
-export const FILE_LIMIT = 20 * 1024 * 1024;
+export const LARGE_FILE_WARNING_SIZE = 50 * 1024 * 1024;
 
 export const DEFAULT_RULES: HeadingRule[] = [
   { id: 'volume', keyword: '卷', level: 1, kind: 'numbered', enabled: true },

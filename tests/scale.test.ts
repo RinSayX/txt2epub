@@ -8,7 +8,7 @@ import { DEFAULT_RULES } from '../src/core/types';
 // Opt-in acceptance checks: npm run test:scale.
 describe.skipIf(!process.env.RUN_SCALE)('desktop-sized novels', () => {
   const measurements: object[] = [];
-  for (const sizeMiB of [1, 10, 20]) {
+  for (const sizeMiB of [1, 10, 20, 51]) {
     it(`processes ${sizeMiB} MiB of UTF-8 text without missing chapters or paragraphs`, async () => {
       const paragraph = '　　山间的风吹过旧日车站，故事从这里继续。<文字> & 符号不会丢失。\n';
       const targetSize = sizeMiB * 1024 * 1024;
@@ -31,7 +31,7 @@ describe.skipIf(!process.env.RUN_SCALE)('desktop-sized novels', () => {
       measurements.push({ targetMiB: sizeMiB, sourceBytes, chapters: chapterCount, paragraphs: paragraphCount, analyzeMs: Math.round(analyzed - start), exportMs: Math.round(exported - analyzed), epubBytes: bytes.length });
       mkdirSync('artifacts', { recursive: true });
       writeFileSync('artifacts/scale-results.json', JSON.stringify({ runtime: process.version, platform: `${process.platform}/${process.arch}`, measurements }, null, 2));
-      if (sizeMiB === 20) writeFileSync('artifacts/scale-20MiB.epub', bytes);
+      if (sizeMiB === 20 || sizeMiB === 51) writeFileSync(`artifacts/scale-${sizeMiB}MiB.epub`, bytes);
     }, 30000);
   }
   it('handles 16000 headings with a flat directory', async () => {

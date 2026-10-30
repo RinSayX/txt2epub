@@ -9,7 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:scale": "RUN_SCALE=1 vitest run tests/scale.test.ts"
+    "test:scale": "RUN_SCALE=1 vitest run tests/scale.test.ts tests/import.test.ts"
   },
   "dependencies": {
     "fflate": "^0.8.2",
