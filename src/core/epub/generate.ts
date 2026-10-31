@@ -1,7 +1,12 @@
 import { strToU8, Zip, ZipDeflate, ZipPassThrough } from 'fflate';
 import type { BookMetadata, Checkpoint, Outline } from '../types';
 import { chapterContentEnd, stripParagraphIndent } from '../paragraphs';
-import { assertXmlCharacters, escapeXml } from './xml';
+import {
+  assertXmlCharacters,
+  escapeXml,
+  isInvalidXmlControl,
+  removeInvalidXmlControls,
+} from './xml';
 import {
   BOOK_STYLES,
   renderContainer,
@@ -15,11 +20,17 @@ import {
 
 const SPLIT_SIZE = 250 * 1024;
 
+export interface EpubExportOptions {
+  cleanInvalidControls?: boolean;
+  onCleaned?: (count: number) => void;
+}
+
 export async function generateEpub(
   text: string,
   outline: Outline,
   metadata: BookMetadata,
   checkpoint: Checkpoint = async () => {},
+  options: EpubExportOptions = {},
 ): Promise<Uint8Array> {
   const title = metadata.title.trim();
   if (!title) throw new Error('请填写书名后再导出。');
@@ -27,14 +38,28 @@ export async function generateEpub(
     throw new Error('请选择有效的书籍语言。');
   assertXmlCharacters(title, '书名');
   assertXmlCharacters(metadata.author, '作者');
+  let line = 1;
+  let controlCount = 0;
+  const clean = options.cleanInvalidControls ? removeInvalidXmlControls : (value: string) => value;
   // Yield while validating, so even unusual files can be cancelled.
   for (let start = 0; start < text.length;) {
     let end = Math.min(text.length, start + 65536);
     if (end < text.length && /[\uD800-\uDBFF]/.test(text[end - 1])) end--;
-    assertXmlCharacters(text.slice(start, end), `正文（字符偏移 ${start} 起）`);
+    const checked = assertXmlCharacters(text.slice(start, end), '正文', {
+      startLine: line,
+      startOffset: start,
+      cleanInvalidControls: options.cleanInvalidControls,
+    });
+    line = checked.nextLine;
+    controlCount += checked.controlCount;
     start = end;
     await checkpoint((0.04 * start) / Math.max(1, text.length));
   }
+  const sections = outline.sections.map((section) => {
+    const sectionTitle = outline.headingCount === 0 ? title : clean(section.title);
+    assertXmlCharacters(sectionTitle, '章节标题');
+    return { ...section, title: sectionTitle };
+  });
   const uid = `urn:uuid:${crypto.randomUUID()}`;
   const modified = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const chunks: Uint8Array[] = [];
@@ -61,9 +86,9 @@ export async function generateEpub(
 
   const targets = new Map<string, string>();
   const documents: EpubDocument[] = [];
-  for (let i = 0; i < outline.sections.length; i++) {
-    const section = outline.sections[i];
-    const sectionTitle = outline.headingCount === 0 ? title : section.title;
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
+    const sectionTitle = section.title;
     let parts: string[] = [];
     let size = 0;
     let part = 0;
@@ -85,12 +110,17 @@ export async function generateEpub(
       part++;
     };
     let position = section.bodyStart;
-    const contentEnd = chapterContentEnd(text, section.bodyStart, section.bodyEnd);
+    const contentEnd = chapterContentEnd(
+      text,
+      section.bodyStart,
+      section.bodyEnd,
+      options.cleanInvalidControls ? isInvalidXmlControl : undefined,
+    );
     let lines = 0;
     while (position < contentEnd) {
       const newline = text.indexOf('\n', position);
       const end = newline < 0 || newline >= contentEnd ? contentEnd : newline;
-      const line = stripParagraphIndent(text.slice(position, end));
+      const line = stripParagraphIndent(clean(text.slice(position, end)));
       const html = line.length ? `<p>${escapeXml(line)}</p>` : '<p class="blank">&#160;</p>';
       const bytes = strToU8(html).length + 5; // Four indentation spaces and one LF.
       if (size + bytes > SPLIT_SIZE && parts.length) await flush();
@@ -110,9 +140,6 @@ export async function generateEpub(
     if (parts.length || part === 0) await flush();
     await checkpoint(0.04 + (0.86 * (i + 1)) / outline.sections.length);
   }
-  const sections = outline.sections.map((section) =>
-    outline.headingCount === 0 ? { ...section, title } : section,
-  );
   const nav = renderNavigation(sections, targets, false, 4);
   const ncx = renderNavigation(sections, targets, true, 2);
   await add('OEBPS/nav.xhtml', renderNavigationDocument(metadata.language, nav));
@@ -129,5 +156,6 @@ export async function generateEpub(
     offset += chunk.length;
   }
   await checkpoint(1);
+  options.onCleaned?.(controlCount);
   return result;
 }

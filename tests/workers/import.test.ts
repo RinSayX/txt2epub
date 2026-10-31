@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 import { DEFAULT_RULES } from '../../src/core/rules';
 import type { DocumentSnapshot, Preview } from '../../src/core/types';
-import type { WorkerRequest, WorkerResponse } from '../../src/workers/protocol';
+import type { ExportResult, WorkerRequest, WorkerResponse } from '../../src/workers/protocol';
 
 interface TestWorker {
   onmessage: ((event: MessageEvent<WorkerRequest>) => Promise<void>) | null;
@@ -77,11 +77,13 @@ describe('document Worker import', () => {
     });
     expect(preview.text).toBe('保留正文');
     const files = unzipSync(
-      await request<Uint8Array>({
-        id: 4,
-        type: 'export',
-        metadata: { title: '空章节清理', author: '', language: 'zh-Hans' },
-      }),
+      (
+        await request<ExportResult>({
+          id: 4,
+          type: 'export',
+          metadata: { title: '空章节清理', author: '', language: 'zh-Hans' },
+        })
+      ).bytes,
     );
     expect(Object.keys(files).filter((path) => path.startsWith('OEBPS/text/'))).toHaveLength(2);
     for (const [path, bytes] of Object.entries(files)) {
@@ -139,6 +141,47 @@ describe('document Worker import', () => {
     });
     expect(preview.text).toBe('正文');
     expect(preview.revision).toBe(initial.revision);
+  });
+
+  it('cleans controls only for an opted-in export and keeps previews and subsequent strict exports unchanged', async () => {
+    const source = '第一章 标题\u001A\n正文\u001A\n\t换行与😀';
+    const snapshot = await request<DocumentSnapshot>({
+      id: 1,
+      type: 'load',
+      file: new File([source], '控制字符.txt'),
+      encoding: 'auto',
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    const exportRequest = {
+      type: 'export' as const,
+      metadata: { title: '控制字符验证', author: '', language: 'zh-Hans' },
+    };
+    await worker.onmessage!({ data: { id: 2, ...exportRequest } } as MessageEvent<WorkerRequest>);
+    expect(messages.find((message) => message.id === 2 && message.type === 'error')).toMatchObject({
+      message: expect.stringContaining('U+001A'),
+    });
+    const result = await request<ExportResult>({
+      id: 3,
+      ...exportRequest,
+      cleanInvalidControls: true,
+    });
+    expect(result.cleanedControlCount).toBe(2);
+    const files = unzipSync(result.bytes);
+    expect(strFromU8(files['OEBPS/text/section-000001.xhtml'])).toContain('<p>正文</p>');
+    expect(strFromU8(files['OEBPS/nav.xhtml'])).toContain('第一章 标题');
+    const preview = await request<Preview>({
+      id: 4,
+      type: 'preview',
+      sectionId: 'line-0',
+      offset: 0,
+    });
+    expect(preview.text).toContain('正文\u001A');
+    expect(preview.revision).toBe(snapshot.revision);
+    await worker.onmessage!({ data: { id: 5, ...exportRequest } } as MessageEvent<WorkerRequest>);
+    expect(messages.find((message) => message.id === 5 && message.type === 'error')).toMatchObject({
+      message: expect.stringContaining('U+001A'),
+    });
   });
 
   it('does not reject imports based on size metadata above 20 MiB or 50 MiB', async () => {

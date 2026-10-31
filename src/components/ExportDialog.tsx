@@ -1,5 +1,6 @@
 import { ArrowDownToLine, BookOpen } from 'lucide-react';
 import Dialog from './Dialog';
+import { useState } from 'react';
 
 interface Props {
   title: string;
@@ -10,7 +11,7 @@ interface Props {
   setLanguage: (value: string) => void;
   sectionCount: number;
   onClose: () => void;
-  onExport: () => void | Promise<void>;
+  onExport: (cleanInvalidControls: boolean) => void | Promise<void>;
 }
 export default function ExportDialog({
   title,
@@ -23,13 +24,14 @@ export default function ExportDialog({
   onClose,
   onExport,
 }: Props) {
+  const [cleanInvalidControls, setCleanInvalidControls] = useState(false);
   return (
     <Dialog title="为故事，装订成书" onClose={onClose}>
       <p className="dialog-intro">检查书籍信息，导出带有多级目录的 EPUB3 文件。</p>
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          void onExport();
+          void onExport(cleanInvalidControls);
         }}
       >
         <label className="form-field">
@@ -58,6 +60,20 @@ export default function ExportDialog({
             <option value="zh-Hant">繁體中文</option>
             <option value="en">English</option>
           </select>
+        </label>
+        <label className="export-cleanup">
+          <input
+            type="checkbox"
+            checked={cleanInvalidControls}
+            onChange={(event) => setCleanInvalidControls(event.target.checked)}
+          />
+          <span>
+            清理不兼容的隐藏控制字符
+            <small>
+              遇到 U+001A 等字符报错时可勾选。仅清理导出内容，源 TXT
+              和预览不变；保留正常文字、换行与制表符，完成后显示清理数量。
+            </small>
+          </span>
         </label>
         <div className="export-summary">
           <BookOpen size={20} />

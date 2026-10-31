@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Corrections, DocumentSnapshot, Encoding, HeadingRule, Preview } from '../core/types';
 import { validateRules } from '../core/outline';
 import { DocumentClient } from '../workers/client';
-import type { Request } from '../workers/protocol';
+import type { ExportResult, Request } from '../workers/protocol';
 import { downloadEpub } from '../lib/download';
 import { readPreferences, persistRules } from './preferences';
 
@@ -268,18 +268,21 @@ export function useDocumentSession() {
     return () => window.removeEventListener('keydown', keyboard);
   });
 
-  async function exportBook() {
+  async function exportBook(cleanInvalidControls = false) {
     if (!title.trim()) {
       setError('请先填写书名。');
       return;
     }
-    const bytes = await perform<Uint8Array>({
+    const result = await perform<ExportResult>({
       type: 'export',
       metadata: { title, author, language },
+      cleanInvalidControls,
     });
-    if (!bytes) return;
-    downloadEpub(bytes, title);
-    setToast(`《${title.trim()}》已生成，下载已开始。`);
+    if (!result) return;
+    downloadEpub(result.bytes, title);
+    setToast(
+      `《${title.trim()}》已生成，下载已开始。${cleanInvalidControls ? `已从导出内容清理 ${result.cleanedControlCount} 个不兼容控制字符，源 TXT 不变。` : ''}`,
+    );
   }
   async function morePreview() {
     if (!preview || preview.nextOffset === null || !client.current || previewLoading) return;

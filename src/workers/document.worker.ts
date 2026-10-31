@@ -106,11 +106,23 @@ worker.onmessage = async ({ data: request }: MessageEvent<WorkerRequest>) => {
       });
     } else if (request.type === 'export') {
       if (!state) throw new Error('请先导入 TXT 文件。');
-      const bytes = await generateEpub(state.text, state.snapshot, request.metadata, (value) =>
-        progress(value, '生成 EPUB'),
+      let cleanedControlCount = 0;
+      const bytes = await generateEpub(
+        state.text,
+        state.snapshot,
+        request.metadata,
+        (value) => progress(value, '生成 EPUB'),
+        {
+          cleanInvalidControls: request.cleanInvalidControls,
+          onCleaned: (count) => {
+            cleanedControlCount = count;
+          },
+        },
       );
       check();
-      send({ id, type: 'result', payload: bytes }, [bytes.buffer as ArrayBuffer]);
+      send({ id, type: 'result', payload: { bytes, cleanedControlCount } }, [
+        bytes.buffer as ArrayBuffer,
+      ]);
     }
   } catch (error) {
     send({

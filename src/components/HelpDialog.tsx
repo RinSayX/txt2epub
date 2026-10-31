@@ -20,7 +20,8 @@ export default function HelpDialog({ onClose }: { onClose: () => void }) {
         </p>
         <p>
           <b>4. 导出 EPUB</b>填写书名与可选作者，下载 EPUB3。附带 NCX
-          目录，实际兼容性请用目标阅读器确认。
+          目录，实际兼容性请用目标阅读器确认。若提示 U+001A
+          等隐藏控制字符，可重新打开导出窗口，勾选“清理不兼容的隐藏控制字符”后导出；源 TXT 不变。
         </p>
         <div className="help-privacy">
           <ShieldCheck size={20} />

@@ -465,9 +465,9 @@ export default function App() {
           setLanguage={setLanguage}
           sectionCount={snapshot?.sections.length ?? 0}
           onClose={() => setDialog(null)}
-          onExport={() => {
+          onExport={(cleanInvalidControls) => {
             if (title.trim()) setDialog(null);
-            return exportBook();
+            return exportBook(cleanInvalidControls);
           }}
         />
       )}
