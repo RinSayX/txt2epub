@@ -2,11 +2,17 @@
 import { generateEpub } from '../core/epub/generate';
 import { buildOutline, sectionPreview } from '../core/outline';
 import { decodeText } from '../core/encoding';
+import { buildCorrectedOutline } from '../core/corrections';
 import type { DocumentSnapshot } from '../core/types';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
 const worker = self as unknown as DedicatedWorkerGlobalScope;
-let state: { text: string; snapshot: DocumentSnapshot } | null = null;
+let state: {
+  source: string;
+  text: string;
+  approvedDeletions: Set<number>;
+  snapshot: DocumentSnapshot;
+} | null = null;
 let activeJob = 0;
 
 function send(response: WorkerResponse, transfer: Transferable[] = []) {
@@ -55,19 +61,35 @@ worker.onmessage = async ({ data: request }: MessageEvent<WorkerRequest>) => {
         encoding: decoded.encoding,
         encodingUncertain: decoded.uncertain,
       };
-      state = { text: decoded.text, snapshot };
+      state = { source: decoded.text, text: decoded.text, approvedDeletions: new Set(), snapshot };
       send({ id, type: 'result', payload: snapshot });
     } else if (request.type === 'analyze') {
       if (!state) throw new Error('请先导入 TXT 文件。');
-      const outline = await buildOutline(
-        state.text,
+      const deleted = request.deleted ?? [];
+      const existing = state.approvedDeletions;
+      const emptyLines = new Set(
+        state.snapshot.sections
+          .filter((section) => section.empty && section.lineIndex !== null)
+          .map((section) => section.lineIndex),
+      );
+      if (deleted.some((line) => !existing.has(line) && !emptyLines.has(line))) {
+        throw new Error('只能删除没有直属正文的空章节，请重新检查目录。');
+      }
+      const corrected = await buildCorrectedOutline(
+        state.source,
         request.rules,
-        new Set(request.ignored),
+        { ignored: request.ignored, deleted },
         request.maxTitleLength,
         (value) => progress(value, '更新章节目录'),
       );
       check();
-      state.snapshot = { ...state.snapshot, ...outline, revision: state.snapshot.revision + 1 };
+      state.text = corrected.text;
+      deleted.forEach((line) => state!.approvedDeletions.add(line));
+      state.snapshot = {
+        ...state.snapshot,
+        ...corrected.outline,
+        revision: state.snapshot.revision + 1,
+      };
       send({ id, type: 'result', payload: state.snapshot });
     } else if (request.type === 'preview') {
       if (!state) throw new Error('请先导入 TXT 文件。');

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { strFromU8, unzipSync } from 'fflate';
 import { DEFAULT_RULES } from '../../src/core/rules';
 import type { DocumentSnapshot, Preview } from '../../src/core/types';
 import type { WorkerRequest, WorkerResponse } from '../../src/workers/protocol';
@@ -30,6 +31,115 @@ describe('document Worker import', () => {
     if (response?.type !== 'result') throw new Error(JSON.stringify(response));
     return response.payload as T;
   }
+
+  it('deletes empty titles in preview and EPUB, supports merge/undo/redo and rule reapplication', async () => {
+    const source =
+      '第一卷 空分组\n第一章 正文\n　保留正文\n第二章 空\n \t　\n第三章 正文\n保留终行\n第四章 空';
+    const initial = await request<DocumentSnapshot>({
+      id: 1,
+      type: 'load',
+      file: new File([source], '空章节.txt'),
+      encoding: 'auto',
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    const deleted = initial.sections
+      .filter((section) => section.empty)
+      .map((section) => section.lineIndex!);
+    expect(deleted).toEqual([0, 3, 7]);
+    const analyze = (
+      id: number,
+      deleted: number[],
+      ignored: number[] = [],
+      rules = DEFAULT_RULES,
+    ) =>
+      request<DocumentSnapshot>({
+        id,
+        type: 'analyze',
+        deleted,
+        ignored,
+        rules,
+        maxTitleLength: 60,
+      });
+    const cleaned = await analyze(2, deleted);
+    expect(
+      cleaned.sections.map((section) => [section.title, section.lineIndex, section.depth]),
+    ).toEqual([
+      ['第一章 正文', 1, 0],
+      ['第三章 正文', 5, 0],
+    ]);
+    expect(cleaned.revision).toBe(initial.revision + 1);
+    const preview = await request<Preview>({
+      id: 3,
+      type: 'preview',
+      sectionId: 'line-1',
+      offset: 0,
+    });
+    expect(preview.text).toBe('保留正文');
+    const files = unzipSync(
+      await request<Uint8Array>({
+        id: 4,
+        type: 'export',
+        metadata: { title: '空章节清理', author: '', language: 'zh-Hans' },
+      }),
+    );
+    expect(Object.keys(files).filter((path) => path.startsWith('OEBPS/text/'))).toHaveLength(2);
+    for (const [path, bytes] of Object.entries(files)) {
+      if (/\.(xhtml|ncx|opf)$/.test(path))
+        expect(strFromU8(bytes)).not.toMatch(/第一卷 空分组|第二章 空|第四章 空/);
+    }
+    const merged = await analyze(5, deleted, [5]);
+    expect(merged.sections).toHaveLength(1);
+    expect(
+      (await request<Preview>({ id: 6, type: 'preview', sectionId: 'line-1', offset: 0 })).text,
+    ).toContain('第三章 正文\n保留终行');
+    expect((await analyze(7, deleted)).sections).toEqual(cleaned.sections);
+    expect((await analyze(8, [])).sections).toEqual(initial.sections);
+    expect((await analyze(9, deleted)).sections).toEqual(cleaned.sections);
+    const disabledRules = DEFAULT_RULES.map((rule) => ({ ...rule, enabled: false }));
+    await analyze(10, [], [], disabledRules);
+    const redo = await analyze(11, deleted, [], disabledRules);
+    expect(redo.headingCount).toBe(0);
+    const body = await request<Preview>({
+      id: 12,
+      type: 'preview',
+      sectionId: 'frontmatter',
+      offset: 0,
+    });
+    expect(body.text).not.toMatch(/第一卷 空分组|第二章 空|第四章 空/);
+    expect(body.text).toContain('保留终行');
+  });
+
+  it('rejects deleting a chapter with body and leaves the document unchanged', async () => {
+    const initial = await request<DocumentSnapshot>({
+      id: 1,
+      type: 'load',
+      file: new File(['第一章 有内容\n正文'], '正文.txt'),
+      encoding: 'auto',
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    const invalid: WorkerRequest = {
+      id: 2,
+      type: 'analyze',
+      deleted: [0],
+      ignored: [],
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    };
+    await worker.onmessage!({ data: invalid } as MessageEvent<WorkerRequest>);
+    expect(messages.find((message) => message.id === 2 && message.type === 'error')).toMatchObject({
+      message: expect.stringContaining('只能删除'),
+    });
+    const preview = await request<Preview>({
+      id: 3,
+      type: 'preview',
+      sectionId: 'line-0',
+      offset: 0,
+    });
+    expect(preview.text).toBe('正文');
+    expect(preview.revision).toBe(initial.revision);
+  });
 
   it('does not reject imports based on size metadata above 20 MiB or 50 MiB', async () => {
     // Test admission separately from allocation; the opt-in case below reads

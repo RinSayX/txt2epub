@@ -16,6 +16,7 @@ import {
   Redo2,
   Settings2,
   ShieldCheck,
+  Trash2,
   Undo2,
   Upload,
   X,
@@ -67,6 +68,9 @@ export default function App() {
     selected,
     selectedIndex,
     suspiciousCount,
+    emptyCount,
+    correctionCount,
+    deleteEmptySections,
     importFile,
     commitImport,
     applyRules,
@@ -272,6 +276,15 @@ export default function App() {
                     </button>
                     <span className="tool-divider" />
                     <button
+                      className="merge-button"
+                      disabled={!emptyCount || !!busy || dirty}
+                      onClick={() => deleteEmptySections(true)}
+                      title="删除所有没有直属正文的标题，保留子章节；可撤销"
+                    >
+                      <Trash2 size={14} />
+                      清理空章节{emptyCount > 0 && `（${emptyCount}）`}
+                    </button>
+                    <button
                       className="icon-button"
                       title="撤销纠错（⌘/Ctrl Z）"
                       aria-label="撤销纠错"
@@ -315,18 +328,29 @@ export default function App() {
                     <ChevronRight size={13} />
                     <strong>{snapshot.headingCount === 0 ? title : selected?.title}</strong>
                   </div>
-                  <button
-                    className="merge-button"
-                    disabled={selected?.lineIndex == null || !!busy || dirty}
-                    onClick={() => {
-                      if (selected?.lineIndex != null)
-                        void changeIgnored([...ignored, selected.lineIndex], 'merge');
-                    }}
-                    title="取消此标题，标题行和正文并入前一节，保留子章节"
-                  >
-                    <Merge size={14} />
-                    并入上一节
-                  </button>
+                  <div className="chapter-actions">
+                    <button
+                      className="merge-button"
+                      disabled={selected?.lineIndex == null || !selected.empty || !!busy || dirty}
+                      onClick={() => deleteEmptySections()}
+                      title="删除当前空标题，保留子章节；可撤销"
+                    >
+                      <Trash2 size={14} />
+                      删除空章节
+                    </button>
+                    <button
+                      className="merge-button"
+                      disabled={selected?.lineIndex == null || !!busy || dirty}
+                      onClick={() => {
+                        if (selected?.lineIndex != null)
+                          void changeIgnored([...ignored, selected.lineIndex], 'merge');
+                      }}
+                      title="取消此标题，标题行和正文并入前一节，保留子章节"
+                    >
+                      <Merge size={14} />
+                      并入上一节
+                    </button>
+                  </div>
                 </div>
                 <BookPreview
                   selected={selected}
@@ -350,7 +374,7 @@ export default function App() {
                   </button>
                   <span>
                     {selectedIndex + 1} / {snapshot.sections.length}
-                    {ignored.length > 0 && <em>已纠正 {ignored.length} 处</em>}
+                    {correctionCount > 0 && <em>已纠正 {correctionCount} 处</em>}
                   </span>
                   <button
                     className="text-button"
@@ -451,7 +475,7 @@ export default function App() {
       {pendingImport && (
         <Dialog title="重新导入文件？" onClose={() => setPendingImport(null)}>
           <p className="dialog-intro">
-            更换文件或编码将重置当前的 {ignored.length} 处标题纠错及撤销记录。原 TXT 文件不会改变。
+            更换文件或编码将重置当前的 {correctionCount} 处标题纠错及撤销记录。原 TXT 文件不会改变。
           </p>
           <div className="dialog-actions">
             <button className="button secondary" onClick={() => setPendingImport(null)}>

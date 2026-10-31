@@ -77,6 +77,7 @@ export async function buildOutline(
           depth: 0,
           parentId: null,
           suspicious: (!previousLineBlank && !nextBlank) || /[。！？“”「」]/u.test(trimmed),
+          empty: false,
         });
       }
     }
@@ -100,12 +101,15 @@ export async function buildOutline(
       depth: 0,
       parentId: null,
       suspicious: false,
+      empty: false,
     });
   }
   const stack: Section[] = [];
   for (let i = 0; i < sections.length; i++) {
     const section = sections[i];
     section.bodyEnd = sections[i + 1]?.headingStart ?? text.length;
+    section.empty =
+      chapterContentEnd(text, section.bodyStart, section.bodyEnd) === section.bodyStart;
     if (section.lineIndex === null) continue;
     while (stack.length && stack[stack.length - 1].level >= section.level) stack.pop();
     section.parentId = stack.at(-1)?.id ?? null;

@@ -58,9 +58,15 @@ export default function BookPreview({
         )}
         {preview && !preview.text && !previewLoading && (
           <p className="no-body">
-            本节为分组标题，没有直属正文。
-            <br />
-            请从目录选择后续章节。
+            {selected?.lineIndex != null ? (
+              <>
+                本节没有直属正文，可点击“删除空章节”。
+                <br />
+                删除后仍会保留子章节，也可从目录选择后续章节。
+              </>
+            ) : (
+              '当前文档没有正文可预览。'
+            )}
           </p>
         )}
         {preview?.nextOffset !== null && preview && (

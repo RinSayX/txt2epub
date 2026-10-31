@@ -9,7 +9,14 @@ export type WorkerRequest =
       rules: HeadingRule[];
       maxTitleLength: number;
     }
-  | { id: number; type: 'analyze'; rules: HeadingRule[]; ignored: number[]; maxTitleLength: number }
+  | {
+      id: number;
+      type: 'analyze';
+      rules: HeadingRule[];
+      ignored: number[];
+      deleted?: number[];
+      maxTitleLength: number;
+    }
   | { id: number; type: 'preview'; sectionId: string; offset: number }
   | { id: number; type: 'export'; metadata: BookMetadata }
   | { id: number; type: 'cancel' };

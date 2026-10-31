@@ -211,8 +211,10 @@
     font-size: 8px;
   }
   .reader-toolbar {
-    height: 47px;
-    padding: 0 13px;
+    min-height: 47px;
+    height: auto;
+    padding: 8px 13px;
+    flex-wrap: wrap;
   }
   .reader-toolbar > span {
     font-size: 10px;
@@ -223,6 +225,7 @@
   }
   .reader-tools {
     gap: 0;
+    flex-wrap: wrap;
   }
   .reader-tools .icon-button {
     width: 24px;
@@ -451,7 +454,7 @@
     height: 590px;
   }
   .reader-toolbar {
-    padding: 0 16px;
+    padding: 8px 16px;
   }
   .paper-art {
     transform: scale(0.9);

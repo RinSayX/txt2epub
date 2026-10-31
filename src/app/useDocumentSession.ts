@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { DocumentSnapshot, Encoding, HeadingRule, Preview } from '../core/types';
+import type { Corrections, DocumentSnapshot, Encoding, HeadingRule, Preview } from '../core/types';
 import { validateRules } from '../core/outline';
 import { DocumentClient } from '../workers/client';
 import type { Request } from '../workers/protocol';
@@ -20,9 +20,10 @@ export function useDocumentSession() {
   const [tab, setTab] = useState<'outline' | 'rules'>('outline');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [ignored, setIgnored] = useState<number[]>([]);
-  const [past, setPast] = useState<number[][]>([]);
-  const [future, setFuture] = useState<number[][]>([]);
+  const [corrections, setCorrections] = useState<Corrections>({ ignored: [], deleted: [] });
+  const { ignored, deleted } = corrections;
+  const [past, setPast] = useState<Corrections[]>([]);
+  const [future, setFuture] = useState<Corrections[]>([]);
   const [busy, setBusy] = useState<{ label: string; progress: number } | null>(null);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
@@ -38,6 +39,9 @@ export function useDocumentSession() {
     JSON.stringify(rules) !== JSON.stringify(appliedRules) || maxLength !== appliedMaxLength;
   const selected = snapshot?.sections.find((section) => section.id === selectedId);
   const selectedIndex = snapshot?.sections.findIndex((section) => section.id === selectedId) ?? -1;
+  const emptySections =
+    snapshot?.sections.filter((section) => section.lineIndex !== null && section.empty) ?? [];
+  const correctionCount = ignored.length + deleted.length;
   const suspiciousCount = snapshot?.sections.filter((section) => section.suspicious).length ?? 0;
 
   useEffect(() => {
@@ -111,7 +115,7 @@ export function useDocumentSession() {
       setTab('rules');
       return;
     }
-    if (ignored.length || past.length || future.length) {
+    if (correctionCount || past.length || future.length) {
       setPendingImport({ file: nextFile, encoding: requestedEncoding });
       return;
     }
@@ -134,7 +138,7 @@ export function useDocumentSession() {
     setSnapshot(result);
     setEncoding(requestedEncoding);
     setSelectedId(result.sections[0]?.id ?? null);
-    setIgnored([]);
+    setCorrections({ ignored: [], deleted: [] });
     setPast([]);
     setFuture([]);
     setAppliedRules(structuredClone(rules));
@@ -164,6 +168,7 @@ export function useDocumentSession() {
         type: 'analyze',
         rules,
         ignored,
+        deleted,
         maxTitleLength: maxLength,
       });
       if (!result) return;
@@ -179,47 +184,74 @@ export function useDocumentSession() {
     persistRules(rules, maxLength);
     setToast('识别规则已应用。');
   }
-  async function changeIgnored(next: number[], action: 'merge' | 'undo' | 'redo') {
+  async function changeCorrections(
+    next: Corrections,
+    action: 'merge' | 'delete' | 'undo' | 'redo',
+  ) {
     const result = await perform<DocumentSnapshot>({
       type: 'analyze',
       rules: appliedRules,
-      ignored: next,
+      ignored: next.ignored,
+      deleted: next.deleted,
       maxTitleLength: appliedMaxLength,
     });
     if (!result) return;
-    if (action === 'merge') {
-      setPast((items) => [...items, ignored]);
+    if (action === 'merge' || action === 'delete') {
+      setPast((items) => [...items, corrections]);
       setFuture([]);
-      const previousId = snapshot?.sections[Math.max(0, selectedIndex - 1)]?.id;
+      const remainingIds = new Set(result.sections.map((section) => section.id));
+      const previousId =
+        action === 'delete' && selectedId && remainingIds.has(selectedId)
+          ? selectedId
+          : snapshot?.sections
+              .slice(0, selectedIndex)
+              .reverse()
+              .find((section) => remainingIds.has(section.id))?.id;
       setSelectedId(
-        result.sections.some((section) => section.id === previousId)
-          ? previousId!
-          : (result.sections[0]?.id ?? null),
+        previousId && remainingIds.has(previousId) ? previousId : (result.sections[0]?.id ?? null),
       );
-      setToast('已并入上一节，原标题行保留为正文。可点击撤销还原。');
+      setToast(
+        action === 'merge'
+          ? '已并入上一节，原标题行保留为正文。可点击撤销还原。'
+          : `已删除 ${next.deleted.length - deleted.length} 个空章节，子章节已保留。可点击撤销还原。`,
+      );
     } else if (action === 'undo') {
       setPast((items) => items.slice(0, -1));
-      setFuture((items) => [...items, ignored]);
+      setFuture((items) => [...items, corrections]);
       setToast('已撤销上一次纠错。');
     } else {
       setFuture((items) => items.slice(0, -1));
-      setPast((items) => [...items, ignored]);
+      setPast((items) => [...items, corrections]);
       setToast('已重做纠错。');
     }
-    setIgnored(next);
+    setCorrections(next);
     setSnapshot(result);
-    if (action !== 'merge')
+    if (action === 'undo' || action === 'redo')
       setSelectedId((id) =>
         result.sections.some((section) => section.id === id)
           ? id
           : (result.sections[0]?.id ?? null),
       );
   }
+  function changeIgnored(next: number[], action: 'merge') {
+    return changeCorrections({ ignored: next, deleted }, action);
+  }
+  function deleteEmptySections(all = false) {
+    if (locked.current || dirty) return;
+    const targets = all
+      ? emptySections
+      : emptySections.filter((section) => section.id === selectedId);
+    if (!targets.length) return;
+    void changeCorrections(
+      { ignored, deleted: [...deleted, ...targets.map((section) => section.lineIndex!)] },
+      'delete',
+    );
+  }
   function undo() {
-    if (past.length && !locked.current) void changeIgnored(past[past.length - 1], 'undo');
+    if (past.length && !locked.current) void changeCorrections(past[past.length - 1], 'undo');
   }
   function redo() {
-    if (future.length && !locked.current) void changeIgnored(future[future.length - 1], 'redo');
+    if (future.length && !locked.current) void changeCorrections(future[future.length - 1], 'redo');
   }
   useEffect(() => {
     function keyboard(event: KeyboardEvent) {
@@ -309,6 +341,9 @@ export function useDocumentSession() {
     selected,
     selectedIndex,
     suspiciousCount,
+    emptyCount: emptySections.length,
+    correctionCount,
+    deleteEmptySections,
     importFile,
     commitImport,
     applyRules,

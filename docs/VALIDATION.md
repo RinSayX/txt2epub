@@ -79,3 +79,11 @@ EPUBCheck 5.4.0 本次输出使用 EPUB 3.4 规则验证；生成器的 OPF 版�
 - `npm run format:check`、`npm run build` 通过；生产构建验证了移动后的 Worker 加载及示例导入、合并、撤销、重做、预览、实际 EPUB 下载。
 - 浏览器 warning/error 日志为空；下载的“山川来信结构整理验证.epub”通过 EPUBCheck 5.4.0：0 fatal / 0 error / 0 warning / 0 info。
 - README 与 docs 中的本地文档链接检查通过。回归截图：`artifacts/structure-preview.png`。结构与取舍说明见 [STRUCTURE.md](STRUCTURE.md)。
+
+## 空章节删除
+
+- 新增单章删除及一键清理，直属正文为空或只有空白的标题可删除；分组标题的子章节保留，目录按剩余标题重建层级。
+- 新增核心和 Worker 回归测试，覆盖空分组、连续空章节、末尾无换行空标题、原文行号及统计保持、混合合并/删除、撤销/重做、规则重算、取消和禁止删除有正文的章节。
+- Worker 导出的 EPUB 解包检查确认空标题不出现在 XHTML、NAV、NCX 或 OPF 中，剩余章节及正文保留。
+- `RUN_SCALE=1 npm test` 共 44 项测试全部通过，包含实际 51 MiB 文件与 16,000 章节规模验收；格式检查和生产构建通过。
+- 生产预览验证示例空卷删除、子章节保留、撤销、重做及一键清理；正文非空时删除按钮不可用。回归截图：`artifacts/empty-chapters.png`。

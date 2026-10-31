@@ -19,6 +19,12 @@ export interface Section {
   depth: number;
   parentId: string | null;
   suspicious: boolean;
+  empty: boolean;
+}
+
+export interface Corrections {
+  ignored: number[];
+  deleted: number[];
 }
 
 export interface Outline {

@@ -24,6 +24,7 @@
 | 导入、重算、纠错、撤销/重做、预览请求和导出流程 | `src/app/useDocumentSession.ts`                              |
 | 规则偏好在浏览器中的读写                        | `src/app/preferences.ts`                                     |
 | 标题匹配、层级及原文边界                        | `src/core/outline.ts`                                        |
+| 空章节删除、保留原文行号的纠错工作副本          | `src/core/corrections.ts`                                    |
 | 编码自动判断及手动解码                          | `src/core/encoding.ts`                                       |
 | 段首空白和章末空行处理                          | `src/core/paragraphs.ts`                                     |
 | 默认关键词和层级                                | `src/core/rules.ts`                                          |

@@ -15,6 +15,11 @@
   align-items: center;
   min-width: 0;
 }
+.chapter-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
 .chapter-location > span {
   white-space: nowrap;
 }
