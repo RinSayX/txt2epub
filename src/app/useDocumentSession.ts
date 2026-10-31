@@ -20,6 +20,7 @@ export function useDocumentSession() {
   const [tab, setTab] = useState<'outline' | 'rules'>('outline');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [removeBlankLines, setRemoveBlankLines] = useState(false);
   const [corrections, setCorrections] = useState<Corrections>({ ignored: [], deleted: [] });
   const { ignored, deleted } = corrections;
   const [past, setPast] = useState<Corrections[]>([]);
@@ -277,6 +278,7 @@ export function useDocumentSession() {
       type: 'export',
       metadata: { title, author, language },
       cleanInvalidControls,
+      removeBlankLines,
     });
     if (!result) return;
     downloadEpub(result.bytes, title);
@@ -324,6 +326,8 @@ export function useDocumentSession() {
     setTab,
     preview,
     previewLoading,
+    removeBlankLines,
+    setRemoveBlankLines,
     ignored,
     past,
     future,

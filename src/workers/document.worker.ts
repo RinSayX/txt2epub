@@ -114,6 +114,7 @@ worker.onmessage = async ({ data: request }: MessageEvent<WorkerRequest>) => {
         (value) => progress(value, '生成 EPUB'),
         {
           cleanInvalidControls: request.cleanInvalidControls,
+          removeBlankLines: request.removeBlankLines,
           onCleaned: (count) => {
             cleanedControlCount = count;
           },

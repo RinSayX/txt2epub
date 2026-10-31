@@ -11,6 +11,7 @@ interface Props {
   preview: Preview | null;
   previewLoading: boolean;
   fontSize: number;
+  removeBlankLines: boolean;
   morePreview: () => void | Promise<void>;
 }
 export default function BookPreview({
@@ -22,6 +23,7 @@ export default function BookPreview({
   preview,
   previewLoading,
   fontSize,
+  removeBlankLines,
   morePreview,
 }: Props) {
   const paper = useRef<HTMLDivElement>(null);
@@ -44,11 +46,13 @@ export default function BookPreview({
         <h2>{headingCount === 0 ? title : selected?.title}</h2>
         <div className="book-divider" />
         <div className="prose">
-          {(preview?.text ? preview.text.split('\n') : []).map((line, index) => (
-            <p className={!line ? 'blank-line' : ''} key={index}>
-              {line || '\u00A0'}
-            </p>
-          ))}
+          {(preview?.text ? preview.text.split('\n') : [])
+            .filter((line) => !removeBlankLines || line.length)
+            .map((line, index) => (
+              <p className={!line ? 'blank-line' : ''} key={index}>
+                {line || '\u00A0'}
+              </p>
+            ))}
         </div>
         {previewLoading && (
           <div className="preview-loading">

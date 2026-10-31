@@ -1,3 +1,27 @@
+.formatting-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #eef0e7;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #7c8b6c;
+}
+.formatting-bar label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.formatting-bar input {
+  margin: 0;
+}
+.formatting-bar > span {
+  font-size: 9px;
+  color: #929f83;
+}
 .chapter-bar {
   display: flex;
   align-items: center;

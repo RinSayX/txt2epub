@@ -10,6 +10,8 @@ interface Props {
   language: string;
   setLanguage: (value: string) => void;
   sectionCount: number;
+  removeBlankLines: boolean;
+  setRemoveBlankLines: (value: boolean) => void;
   onClose: () => void;
   onExport: (cleanInvalidControls: boolean) => void | Promise<void>;
 }
@@ -21,6 +23,8 @@ export default function ExportDialog({
   language,
   setLanguage,
   sectionCount,
+  removeBlankLines,
+  setRemoveBlankLines,
   onClose,
   onExport,
 }: Props) {
@@ -64,6 +68,17 @@ export default function ExportDialog({
         <label className="export-cleanup">
           <input
             type="checkbox"
+            checked={removeBlankLines}
+            onChange={(event) => setRemoveBlankLines(event.target.checked)}
+          />
+          <span>
+            清理段间空行
+            <small>自动略过空白行，保留每个正文段落。与预览同步，源 TXT 不变。</small>
+          </span>
+        </label>
+        <label className="export-cleanup">
+          <input
+            type="checkbox"
             checked={cleanInvalidControls}
             onChange={(event) => setCleanInvalidControls(event.target.checked)}
           />
@@ -84,7 +99,9 @@ export default function ExportDialog({
           <span>.epub</span>
         </div>
         <p className="export-note">
-          自动去除段首空白和章末空行，保留段间换行。旧阅读器兼容性取决于具体软件或设备。
+          自动去除段首空白和章末空行。
+          {removeBlankLines ? '已开启段间空行清理，正文每段仍独立。' : '保留段落之间的空行。'}
+          旧阅读器兼容性取决于具体软件或设备。
         </p>
         <button className="button primary export-confirm" type="submit" disabled={!title.trim()}>
           <ArrowDownToLine size={17} />

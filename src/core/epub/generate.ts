@@ -22,6 +22,7 @@ const SPLIT_SIZE = 250 * 1024;
 
 export interface EpubExportOptions {
   cleanInvalidControls?: boolean;
+  removeBlankLines?: boolean;
   onCleaned?: (count: number) => void;
 }
 
@@ -121,11 +122,13 @@ export async function generateEpub(
       const newline = text.indexOf('\n', position);
       const end = newline < 0 || newline >= contentEnd ? contentEnd : newline;
       const line = stripParagraphIndent(clean(text.slice(position, end)));
-      const html = line.length ? `<p>${escapeXml(line)}</p>` : '<p class="blank">&#160;</p>';
-      const bytes = strToU8(html).length + 5; // Four indentation spaces and one LF.
-      if (size + bytes > SPLIT_SIZE && parts.length) await flush();
-      parts.push(html);
-      size += bytes;
+      if (line.length || !options.removeBlankLines) {
+        const html = line.length ? `<p>${escapeXml(line)}</p>` : '<p class="blank">&#160;</p>';
+        const bytes = strToU8(html).length + 5; // Four indentation spaces and one LF.
+        if (size + bytes > SPLIT_SIZE && parts.length) await flush();
+        parts.push(html);
+        size += bytes;
+      }
       position = end < contentEnd ? end + 1 : contentEnd;
       if (++lines % 1000 === 0)
         await checkpoint(

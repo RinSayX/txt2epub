@@ -18,7 +18,13 @@ export type WorkerRequest =
       maxTitleLength: number;
     }
   | { id: number; type: 'preview'; sectionId: string; offset: number }
-  | { id: number; type: 'export'; metadata: BookMetadata; cleanInvalidControls?: boolean }
+  | {
+      id: number;
+      type: 'export';
+      metadata: BookMetadata;
+      cleanInvalidControls?: boolean;
+      removeBlankLines?: boolean;
+    }
   | { id: number; type: 'cancel' };
 
 export type WorkerResponse =

@@ -12,6 +12,8 @@ describe('export cleanup consent', () => {
         author: '',
         language: 'zh-Hans',
         sectionCount: 1,
+        removeBlankLines: false,
+        setRemoveBlankLines: noop,
         setTitle: noop,
         setAuthor: noop,
         setLanguage: noop,

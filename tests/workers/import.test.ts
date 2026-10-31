@@ -207,6 +207,45 @@ describe('document Worker import', () => {
     expect(messages.some((message) => message.type === 'error')).toBe(false);
   });
 
+  it('exports with blank line cleanup on or off without changing the document or raw preview', async () => {
+    const source = '第一章 正文\n\n　首段\n\n \t　\n二段\n\n';
+    const initial = await request<DocumentSnapshot>({
+      id: 1,
+      type: 'load',
+      file: new File([source], '空行.txt'),
+      encoding: 'auto',
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    const preview = await request<Preview>({
+      id: 2,
+      type: 'preview',
+      sectionId: 'line-0',
+      offset: 0,
+    });
+    expect(preview.text).toBe('\n首段\n\n\n二段');
+    for (const [index, removeBlankLines] of [true, false, true].entries()) {
+      const result = await request<ExportResult>({
+        id: index + 3,
+        type: 'export',
+        metadata: { title: '空行验证', author: '', language: 'zh-Hans' },
+        removeBlankLines,
+      });
+      const chapter = strFromU8(unzipSync(result.bytes)['OEBPS/text/section-000001.xhtml']);
+      expect(chapter.includes('<p class="blank">')).toBe(!removeBlankLines);
+      expect(chapter).toContain('<p>首段</p>');
+      expect(chapter).toContain('<p>二段</p>');
+    }
+    const after = await request<Preview>({
+      id: 6,
+      type: 'preview',
+      sectionId: 'line-0',
+      offset: 0,
+    });
+    expect(after).toEqual(preview);
+    expect(after.revision).toBe(initial.revision);
+  });
+
   it.skipIf(!process.env.RUN_SCALE)(
     'reads and previews a real 51 MiB TXT through the Worker',
     async () => {

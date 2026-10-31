@@ -48,6 +48,8 @@ export default function App() {
     setTab,
     preview,
     previewLoading,
+    removeBlankLines,
+    setRemoveBlankLines,
     ignored,
     past,
     future,
@@ -305,7 +307,11 @@ export default function App() {
                   </>
                 )}
                 <span className="preview-label">
-                  {snapshot ? '已清理段首和章末空白' : '你的文件，始终在你手中'}
+                  {snapshot
+                    ? removeBlankLines
+                      ? '已清理段首空白及正文空行'
+                      : '已清理段首和章末空白'
+                    : '你的文件，始终在你手中'}
                 </span>
               </div>
             </div>
@@ -318,6 +324,18 @@ export default function App() {
               />
             ) : (
               <>
+                <div className="formatting-bar">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={removeBlankLines}
+                      disabled={!!busy}
+                      onChange={(event) => setRemoveBlankLines(event.target.checked)}
+                    />
+                    清理段间空行
+                  </label>
+                  <span>自动应用于预览和导出，保留正常段落分隔</span>
+                </div>
                 <div className="chapter-bar">
                   <div className="chapter-location">
                     <span>
@@ -361,6 +379,7 @@ export default function App() {
                   preview={preview}
                   previewLoading={previewLoading}
                   fontSize={fontSize}
+                  removeBlankLines={removeBlankLines}
                   morePreview={morePreview}
                 />
                 <div className="reader-footer">
@@ -464,6 +483,8 @@ export default function App() {
           language={language}
           setLanguage={setLanguage}
           sectionCount={snapshot?.sections.length ?? 0}
+          removeBlankLines={removeBlankLines}
+          setRemoveBlankLines={setRemoveBlankLines}
           onClose={() => setDialog(null)}
           onExport={(cleanInvalidControls) => {
             if (title.trim()) setDialog(null);
