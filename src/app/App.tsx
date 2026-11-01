@@ -499,9 +499,9 @@ export default function App() {
           removeBlankLines={removeBlankLines}
           setRemoveBlankLines={setRemoveBlankLines}
           onClose={() => setDialog(null)}
-          onExport={(cleanInvalidControls) => {
+          onExport={(cleanInvalidControls, coverPng) => {
             if (title.trim()) setDialog(null);
-            return exportBook(cleanInvalidControls);
+            return exportBook(cleanInvalidControls, coverPng);
           }}
         />
       )}

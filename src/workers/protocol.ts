@@ -34,6 +34,7 @@ export type WorkerRequest =
       id: number;
       type: 'export';
       metadata: BookMetadata;
+      coverPng?: Uint8Array;
       cleanInvalidControls?: boolean;
       removeBlankLines?: boolean;
     }

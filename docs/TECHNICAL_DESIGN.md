@@ -216,6 +216,8 @@ OEBPS/text/section-000002.xhtml
 生成要求：
 
 - 书名、语言、唯一标识和修改时间写入元数据；作者为空时不虚构作者。
+- 可选自动生成封面，默认关闭。使用必填书名，通过浏览器 Canvas 在本地生成 600 × 800 像素、白底黑字 PNG；不额外添加书名号，书名水平居中，文字块中心位于距顶 240 像素处。按实际字体测宽换行，必要时缩小字号，保证长书名完整。预览与导出共用绘制函数，导出等待字体就绪；生成失败明确报错，不静默跳过所选封面。
+- 开启时添加 `images/cover.png` 与无 CSS 的 `cover.xhtml`，OPF 用 `cover-image` 标记 PNG，封面页位于 spine 最前，同时提供旧式 cover meta 与 guide 引用。章节 NAV/NCX、文件名和正文保持原有内容；关闭时不产生封面资源。封面格式和声明参照 [EPUB 3.3 manifest 资源属性](https://www.w3.org/TR/epub-33/#sec-item-resource-properties)。
 - 每个有效标题至少对应一个内容文档，包括卷、册等分组标题；前言单独输出。
 - 超长内容段可按段落拆成多个文件，建议从每片约 250KiB UTF-8 XHTML 开始实测；目录链接首片，spine 包含所有片段，保持连续阅读。
 - 嵌套 NAV、NCX 使用相同层级和目标；所有目标 ID、manifest 和 spine 引用须可解析。

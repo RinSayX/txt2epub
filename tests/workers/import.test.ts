@@ -32,6 +32,29 @@ describe('document Worker import', () => {
     return response.payload as T;
   }
 
+  it('passes the selected cover through the export protocol without adding one by default', async () => {
+    await request<DocumentSnapshot>({
+      id: 1,
+      type: 'load',
+      file: new File(['第一章 风雨\n正文'], '书.txt'),
+      encoding: 'auto',
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    const metadata = { title: '封面书名', author: '', language: 'zh-Hans' };
+    const coverPng = new Uint8Array([137, 80, 78, 71]);
+    const withCover = unzipSync(
+      (await request<ExportResult>({ id: 2, type: 'export', metadata, coverPng })).bytes,
+    );
+    expect(withCover['OEBPS/images/cover.png']).toEqual(coverPng);
+    expect(withCover['OEBPS/cover.xhtml']).toBeDefined();
+    const plain = unzipSync(
+      (await request<ExportResult>({ id: 3, type: 'export', metadata })).bytes,
+    );
+    expect(plain['OEBPS/images/cover.png']).toBeUndefined();
+    expect(plain['OEBPS/cover.xhtml']).toBeUndefined();
+  });
+
   it('deletes empty titles in preview and EPUB, supports merge/undo/redo and rule reapplication', async () => {
     const source =
       '第一卷 空分组\n第一章 正文\n　保留正文\n第二章 空\n \t　\n第三章 正文\n保留终行\n第四章 空';

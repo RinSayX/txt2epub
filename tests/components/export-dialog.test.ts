@@ -22,6 +22,10 @@ describe('export cleanup consent', () => {
       }),
     );
     expect(markup).toContain('type="checkbox"');
+    expect(markup).toContain('自动生成封面');
+    expect(markup).toContain('600 × 800');
+    expect(markup).toContain('书名必填');
+    expect(markup).not.toContain('<canvas');
     expect(markup).not.toContain('checked=""');
     expect(markup).toContain('清理不兼容的隐藏控制字符');
     expect(markup).toContain('源 TXT 和预览不变');

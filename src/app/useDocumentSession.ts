@@ -312,7 +312,7 @@ export function useDocumentSession() {
     return () => window.removeEventListener('keydown', keyboard);
   });
 
-  async function exportBook(cleanInvalidControls = false) {
+  async function exportBook(cleanInvalidControls = false, coverPng?: Uint8Array) {
     if (!title.trim()) {
       setError('请先填写书名。');
       return;
@@ -322,6 +322,7 @@ export function useDocumentSession() {
       metadata: { title, author, language },
       cleanInvalidControls,
       removeBlankLines,
+      coverPng,
     });
     if (!result) return;
     downloadEpub(result.bytes, title);

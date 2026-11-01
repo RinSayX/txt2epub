@@ -37,6 +37,7 @@
 | XML 转义、合法字符检查和可选控制字符清理        | `src/core/epub/xml.ts`                                                         |
 | Worker 生命周期及请求响应                       | `src/workers/client.ts`、`protocol.ts`、`document.worker.ts`                   |
 | 下载文件名与 Blob 生命周期                      | `src/lib/download.ts`                                                          |
+| 自动封面绘制、PNG 编码与实时预览                | `src/lib/cover.ts`、`src/components/CoverPreview.tsx`                          |
 
 ## 依赖边界
 

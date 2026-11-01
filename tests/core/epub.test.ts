@@ -10,6 +10,42 @@ const text =
   '前言\n\n第一卷 山\n卷首说明\n第一章 风\n　正文 <tag> & "引号"\n\n次行😀\n第二卷 引用。\n引用的下文\n第二章 雨\n结束';
 
 describe('EPUB3 export', () => {
+  it('includes the optional PNG cover as the first reading page with matching cover metadata and no styles', async () => {
+    // The renderer owns PNG encoding; the packager must preserve the supplied image bytes.
+    const coverPng = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const outline = await buildOutline(text, DEFAULT_RULES);
+    const files = unzipSync(await generateEpub(text, outline, metadata, undefined, { coverPng }));
+    expect(files['OEBPS/images/cover.png']).toEqual(coverPng);
+    const parser = new DOMParser();
+    const opf = parser.parseFromString(strFromU8(files['OEBPS/content.opf']), 'application/xml');
+    const items = Array.from(opf.getElementsByTagName('item'));
+    const image = items.find((item) => item.getAttribute('properties') === 'cover-image')!;
+    expect(image.getAttribute('media-type')).toBe('image/png');
+    expect(image.getAttribute('href')).toBe('images/cover.png');
+    const legacy = Array.from(opf.getElementsByTagName('meta')).find(
+      (item) => item.getAttribute('name') === 'cover',
+    )!;
+    expect(legacy.getAttribute('content')).toBe(image.getAttribute('id'));
+    expect(opf.getElementsByTagName('itemref')[0].getAttribute('idref')).toBe('cover-page');
+    expect(opf.getElementsByTagName('reference')[0].getAttribute('href')).toBe('cover.xhtml');
+    const cover = parser.parseFromString(strFromU8(files['OEBPS/cover.xhtml']), 'application/xml');
+    const img = cover.getElementsByTagName('img')[0];
+    expect(img.getAttribute('alt')).toBe(metadata.title);
+    expect(img.getAttribute('src')).toBe('images/cover.png');
+    expect([img.getAttribute('width'), img.getAttribute('height')]).toEqual(['600', '800']);
+    for (const [path, data] of Object.entries(files)) {
+      if (/\.(xhtml|opf)$/.test(path))
+        expect(strFromU8(data)).not.toMatch(/<style\b|\bstyle=|stylesheet|text\/css/);
+    }
+    for (const item of items) expect(files[`OEBPS/${item.getAttribute('href')}`]).toBeDefined();
+    const withoutCover = unzipSync(await generateEpub(text, outline, metadata));
+    expect(withoutCover['OEBPS/cover.xhtml']).toBeUndefined();
+    expect(withoutCover['OEBPS/images/cover.png']).toBeUndefined();
+    expect(strFromU8(files['OEBPS/nav.xhtml'])).toBe(strFromU8(withoutCover['OEBPS/nav.xhtml']));
+    for (const path of Object.keys(files).filter((path) => path.startsWith('OEBPS/text/'))) {
+      expect(files[path]).toEqual(withoutCover[path]);
+    }
+  });
   it('formats chapter markup, removes indentation and keeps interior/trailing spaces and escaped text', async () => {
     const paragraphs = [
       ' \t　正文 <tag> & "引号"  ',

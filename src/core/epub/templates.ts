@@ -126,6 +126,7 @@ export function renderPackage(
   uid: string,
   modified: string,
   documents: EpubDocument[],
+  hasCover = false,
 ): string {
   return [
     xmlHeader,
@@ -138,10 +139,16 @@ export function renderPackage(
       ? [`    <dc:creator>${escapeXml(metadata.author.trim())}</dc:creator>`]
       : []),
     `    <meta property="dcterms:modified">${modified}</meta>`,
+    ...(hasCover ? ['    <meta name="cover" content="cover-image" />'] : []),
     '  </metadata>',
     '  <manifest>',
     '    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav" />',
     '    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml" />',
+    ...(hasCover
+      ? [
+          '    <item id="cover-image" href="images/cover.png" media-type="image/png" properties="cover-image" />',
+        ]
+      : []),
     ...documents.map(
       (doc) => `    <item id="${doc.id}" href="${doc.path}" media-type="application/xhtml+xml" />`,
     ),
@@ -149,6 +156,13 @@ export function renderPackage(
     '  <spine toc="ncx">',
     ...documents.map((doc) => `    <itemref idref="${doc.id}" />`),
     '  </spine>',
+    ...(hasCover
+      ? [
+          '  <guide>',
+          '    <reference type="cover" title="封面" href="cover.xhtml" />',
+          '  </guide>',
+        ]
+      : []),
     '</package>',
     '',
   ].join('\n');

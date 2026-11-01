@@ -20,6 +20,7 @@ import {
 const SPLIT_SIZE = 250 * 1024;
 
 export interface EpubExportOptions {
+  coverPng?: Uint8Array;
   cleanInvalidControls?: boolean;
   removeBlankLines?: boolean;
   onCleaned?: (count: number) => void;
@@ -68,11 +69,11 @@ export async function generateEpub(
     if (error) zipError = error;
     else chunks.push(chunk);
   });
-  const add = async (path: string, content: string, store = false) => {
+  const add = async (path: string, content: string | Uint8Array, store = false) => {
     if (zipError) throw zipError;
     const entry = store ? new ZipPassThrough(path) : new ZipDeflate(path, { level: 6 });
     zip.add(entry);
-    const data = strToU8(content);
+    const data = typeof content === 'string' ? strToU8(content) : content;
     // Avoid a long compression task for exceptionally large single paragraphs.
     for (let start = 0; start < data.length; start += 65536) {
       entry.push(data.subarray(start, start + 65536), start + 65536 >= data.length);
@@ -143,9 +144,24 @@ export async function generateEpub(
   }
   const nav = renderNavigation(sections, targets, false, 4);
   const ncx = renderNavigation(sections, targets, true, 2);
+  if (options.coverPng) {
+    await add('OEBPS/images/cover.png', options.coverPng, true);
+    await add(
+      'OEBPS/cover.xhtml',
+      renderXhtml(
+        title,
+        [`<img src="images/cover.png" width="600" height="800" alt="${escapeXml(title)}" />`],
+        metadata.language,
+      ),
+    );
+    documents.unshift({ id: 'cover-page', path: 'cover.xhtml' });
+  }
   await add('OEBPS/nav.xhtml', renderNavigationDocument(metadata.language, nav));
   await add('OEBPS/toc.ncx', renderNcx(sections, uid, title, ncx));
-  await add('OEBPS/content.opf', renderPackage(metadata, title, uid, modified, documents));
+  await add(
+    'OEBPS/content.opf',
+    renderPackage(metadata, title, uid, modified, documents, !!options.coverPng),
+  );
   await checkpoint(0.96);
   zip.end();
   if (zipError) throw zipError;

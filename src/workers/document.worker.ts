@@ -182,6 +182,7 @@ worker.onmessage = async ({ data: request }: MessageEvent<WorkerRequest>) => {
         {
           cleanInvalidControls: request.cleanInvalidControls,
           removeBlankLines: request.removeBlankLines,
+          coverPng: request.coverPng,
           onCleaned: (count) => {
             cleanedControlCount = count;
           },
