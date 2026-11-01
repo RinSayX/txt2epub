@@ -1,5 +1,6 @@
-import type { Checkpoint, HeadingRule, Outline, Section } from './types';
+import type { Checkpoint, HeadingRule, Outline, RegexHeadingRule, Section } from './types';
 import { chapterContentEnd, previewParagraphs } from './paragraphs';
+import { compileRegexRules } from './regex';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -33,8 +34,10 @@ export async function buildOutline(
   ignored: ReadonlySet<number> = new Set(),
   maxTitleLength = 60,
   checkpoint: Checkpoint = async () => {},
+  regexRules: RegexHeadingRule[] = [],
 ): Promise<Outline> {
   validateRules(rules, maxTitleLength);
+  const regex = compileRegexRules(regexRules);
   const compiled = rules
     .filter((rule) => rule.enabled)
     .sort((a, b) => b.keyword.length - a.keyword.length)
@@ -62,13 +65,30 @@ export async function buildOutline(
       trimmed.length <= maxTitleLength * 2 &&
       [...trimmed].length <= maxTitleLength
     ) {
-      const match = compiled.find(({ pattern }) => pattern.test(trimmed));
+      let match: { rule: { level: number }; title: string; regexRuleId?: string } | undefined;
+      for (const { rule, pattern } of regex) {
+        const result = pattern.exec(trimmed);
+        if (!result || result[0] !== trimmed) continue;
+        const title = (
+          result.groups && Object.hasOwn(result.groups, 'title') ? result.groups.title : trimmed
+        )?.trim();
+        if (!title)
+          throw new Error(
+            `正则规则“${rule.name}”在原文第 ${lineIndex + 1} 行提取出空标题。请调整 title 捕获组。`,
+          );
+        match = { rule, title, regexRuleId: rule.id };
+        break;
+      }
+      if (!match) {
+        const keywordMatch = compiled.find(({ pattern }) => pattern.test(trimmed));
+        if (keywordMatch) match = { rule: keywordMatch.rule, title: trimmed };
+      }
       if (match) {
         const nextEnd = text.indexOf('\n', end + 1);
         const nextBlank = !text.slice(end + 1, nextEnd === -1 ? text.length : nextEnd).trim();
         sections.push({
           id: `line-${lineIndex}`,
-          title: trimmed,
+          title: match.title,
           lineIndex,
           headingStart: offset,
           bodyStart: newline === -1 ? end : end + 1,
@@ -78,6 +98,7 @@ export async function buildOutline(
           parentId: null,
           suspicious: (!previousLineBlank && !nextBlank) || /[。！？“”「」]/u.test(trimmed),
           empty: false,
+          ...(match.regexRuleId ? { regexRuleId: match.regexRuleId } : {}),
         });
       }
     }

@@ -18,22 +18,25 @@
 
 ## 修改功能时从哪里入手
 
-| 工作内容                                        | 入口                                                         |
-| ----------------------------------------------- | ------------------------------------------------------------ |
-| 页面结构、按钮及区域组合                        | `src/app/App.tsx`                                            |
-| 导入、重算、纠错、撤销/重做、预览请求和导出流程 | `src/app/useDocumentSession.ts`                              |
-| 规则偏好在浏览器中的读写                        | `src/app/preferences.ts`                                     |
-| 标题匹配、层级及原文边界                        | `src/core/outline.ts`                                        |
-| 空章节删除、保留原文行号的纠错工作副本          | `src/core/corrections.ts`                                    |
-| 编码自动判断及手动解码                          | `src/core/encoding.ts`                                       |
-| 段首空白和章末空行处理                          | `src/core/paragraphs.ts`                                     |
-| 默认关键词和层级                                | `src/core/rules.ts`                                          |
-| 文件大小提示阈值及编码选项                      | `src/config.ts`                                              |
-| XHTML 拆片及 ZIP 条目顺序                       | `src/core/epub/generate.ts`                                  |
-| XHTML、NAV、NCX、OPF、container.xml 和书内 CSS  | `src/core/epub/templates.ts`                                 |
-| XML 转义、合法字符检查和可选控制字符清理        | `src/core/epub/xml.ts`                                       |
-| Worker 生命周期及请求响应                       | `src/workers/client.ts`、`protocol.ts`、`document.worker.ts` |
-| 下载文件名与 Blob 生命周期                      | `src/lib/download.ts`                                        |
+| 工作内容                                        | 入口                                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------------------ |
+| 页面结构、按钮及区域组合                        | `src/app/App.tsx`                                                              |
+| 导入、重算、纠错、撤销/重做、预览请求和导出流程 | `src/app/useDocumentSession.ts`                                                |
+| 规则偏好在浏览器中的读写                        | `src/app/preferences.ts`                                                       |
+| 标题匹配、层级及原文边界                        | `src/core/outline.ts`                                                          |
+| 空章节删除、保留原文行号的纠错工作副本          | `src/core/corrections.ts`                                                      |
+| 编码自动判断及手动解码                          | `src/core/encoding.ts`                                                         |
+| 段首空白和章末空行处理                          | `src/core/paragraphs.ts`                                                       |
+| 正则结构校验、编译及前置序号示例                | `src/core/regex.ts`                                                            |
+| 高级正则规则编辑和测试结果                      | `src/components/RegexRulesPanel.tsx`                                           |
+| 正则隔离、超时、取消及任务协议                  | `src/workers/analysis-runner.ts`、`analysis.worker.ts`、`analysis-protocol.ts` |
+| 默认关键词和层级                                | `src/core/rules.ts`                                                            |
+| 文件大小提示阈值及编码选项                      | `src/config.ts`                                                                |
+| XHTML 拆片及 ZIP 条目顺序                       | `src/core/epub/generate.ts`                                                    |
+| XHTML、NAV、NCX、OPF、container.xml 和书内 CSS  | `src/core/epub/templates.ts`                                                   |
+| XML 转义、合法字符检查和可选控制字符清理        | `src/core/epub/xml.ts`                                                         |
+| Worker 生命周期及请求响应                       | `src/workers/client.ts`、`protocol.ts`、`document.worker.ts`                   |
+| 下载文件名与 Blob 生命周期                      | `src/lib/download.ts`                                                          |
 
 ## 依赖边界
 

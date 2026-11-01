@@ -1,4 +1,4 @@
-import type { BookMetadata, Encoding, HeadingRule } from '../core/types';
+import type { BookMetadata, Encoding, HeadingRule, RegexHeadingRule } from '../core/types';
 
 export type WorkerRequest =
   | {
@@ -7,15 +7,27 @@ export type WorkerRequest =
       file: File;
       encoding: Encoding;
       rules: HeadingRule[];
+      regexRules?: RegexHeadingRule[];
       maxTitleLength: number;
     }
   | {
       id: number;
       type: 'analyze';
       rules: HeadingRule[];
+      regexRules?: RegexHeadingRule[];
       ignored: number[];
       deleted?: number[];
       maxTitleLength: number;
+    }
+  | {
+      id: number;
+      type: 'test-rules';
+      rules: HeadingRule[];
+      regexRules: RegexHeadingRule[];
+      maxTitleLength: number;
+      ignored: number[];
+      deleted: number[];
+      sampleText?: string;
     }
   | { id: number; type: 'preview'; sectionId: string; offset: number }
   | {

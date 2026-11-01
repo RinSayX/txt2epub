@@ -1,7 +1,8 @@
 import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { DEFAULT_RULES } from '../core/rules';
-import type { HeadingRule } from '../core/types';
+import type { HeadingRule, RegexHeadingRule, RegexTestResult } from '../core/types';
+import RegexRulesPanel from './RegexRulesPanel';
 
 interface Props {
   rules: HeadingRule[];
@@ -11,6 +12,11 @@ interface Props {
   dirty: boolean;
   disabled: boolean;
   onApply: () => void;
+  regexRules: RegexHeadingRule[];
+  onRegexChange: (rules: RegexHeadingRule[]) => void;
+  onTestRegex: (sampleText?: string) => Promise<RegexTestResult | null>;
+  hasDocument: boolean;
+  contextKey: string;
 }
 
 export default function RulesPanel({
@@ -21,6 +27,11 @@ export default function RulesPanel({
   dirty,
   disabled,
   onApply,
+  regexRules,
+  onRegexChange,
+  onTestRegex,
+  hasDocument,
+  contextKey,
 }: Props) {
   const [keyword, setKeyword] = useState('');
   const [kind, setKind] = useState<'numbered' | 'unnumbered'>('numbered');
@@ -173,6 +184,14 @@ export default function RulesPanel({
             </p>
           )}
         </div>
+        <RegexRulesPanel
+          rules={regexRules}
+          onChange={onRegexChange}
+          disabled={disabled}
+          hasDocument={hasDocument}
+          contextKey={contextKey}
+          onTest={onTestRegex}
+        />
         <label className="max-length">
           标题长度上限
           <span>
@@ -191,6 +210,7 @@ export default function RulesPanel({
             className="text-button"
             onClick={() => {
               onChange(structuredClone(DEFAULT_RULES));
+              onRegexChange([]);
               setMaxLength(60);
             }}
           >

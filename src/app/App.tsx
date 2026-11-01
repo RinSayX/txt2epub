@@ -36,6 +36,9 @@ export default function App() {
   const {
     rules,
     setRules,
+    regexRules,
+    setRegexRules,
+    testRegexRules,
     maxLength,
     setMaxLength,
     snapshot,
@@ -244,6 +247,16 @@ export default function App() {
                 dirty={dirty}
                 disabled={!!busy}
                 onApply={applyRules}
+                regexRules={regexRules}
+                onRegexChange={setRegexRules}
+                onTestRegex={testRegexRules}
+                hasDocument={!!snapshot}
+                contextKey={JSON.stringify([
+                  rules,
+                  maxLength,
+                  snapshot?.documentId,
+                  snapshot?.revision,
+                ])}
               />
             )}
           </aside>

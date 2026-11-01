@@ -182,6 +182,105 @@
   margin-bottom: 0;
   text-align: center;
 }
+.regex-panel {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #e0e7d5;
+  font-size: 11px;
+  color: #667759;
+}
+.regex-panel summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.regex-help {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #879675;
+  overflow-wrap: anywhere;
+}
+.regex-rule {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #dfe6d5;
+  border-radius: 6px;
+  background: #fafbf4;
+}
+.regex-rule-heading,
+.regex-rule-heading > label,
+.regex-level {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+.regex-rule-heading input {
+  margin: 0;
+}
+.regex-field {
+  display: block;
+  margin-top: 10px;
+  font-size: 10px;
+}
+.regex-field input,
+.regex-field textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 7px;
+  background: #fffefa;
+  color: #4d5749;
+  border: 1px solid #dce5d0;
+  border-radius: 4px;
+  font:
+    11px/1.6 ui-monospace,
+    monospace;
+}
+.regex-field textarea {
+  resize: vertical;
+}
+.regex-level {
+  margin-top: 9px;
+  font-size: 10px;
+}
+.regex-level select {
+  background: #fffefa;
+  border: 1px solid #dce5d0;
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+.regex-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.regex-buttons .text-button {
+  font-size: 10px;
+}
+.regex-test {
+  margin-top: 15px;
+  border-top: 1px solid #e0e7d5;
+}
+.regex-result {
+  font-size: 10px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.regex-sample {
+  padding: 8px 0;
+  border-top: 1px solid #e7ecde;
+}
+.regex-sample > * {
+  display: block;
+}
+.regex-sample small {
+  color: #879675;
+}
+.regex-sample strong {
+  font-weight: 500;
+}
 .sr-only {
   position: absolute;
   width: 1px;

@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Corrections, DocumentSnapshot, Encoding, HeadingRule, Preview } from '../core/types';
+import type {
+  Corrections,
+  DocumentSnapshot,
+  Encoding,
+  HeadingRule,
+  Preview,
+  RegexHeadingRule,
+  RegexTestResult,
+} from '../core/types';
 import { validateRules } from '../core/outline';
+import { validateRegexRules } from '../core/regex';
 import { DocumentClient } from '../workers/client';
 import type { ExportResult, Request } from '../workers/protocol';
 import { downloadEpub } from '../lib/download';
@@ -10,6 +19,10 @@ export function useDocumentSession() {
   const [preferences] = useState(readPreferences);
   const [rules, setRules] = useState<HeadingRule[]>(preferences.rules);
   const [appliedRules, setAppliedRules] = useState<HeadingRule[]>(preferences.rules);
+  const [regexRules, setRegexRules] = useState<RegexHeadingRule[]>(preferences.regexRules);
+  const [appliedRegexRules, setAppliedRegexRules] = useState<RegexHeadingRule[]>(
+    preferences.regexRules,
+  );
   const [maxLength, setMaxLength] = useState(preferences.maxLength);
   const [appliedMaxLength, setAppliedMaxLength] = useState(preferences.maxLength);
   const [snapshot, setSnapshot] = useState<DocumentSnapshot | null>(null);
@@ -37,7 +50,9 @@ export function useDocumentSession() {
   const client = useRef<DocumentClient | null>(null);
   const locked = useRef(false);
   const dirty =
-    JSON.stringify(rules) !== JSON.stringify(appliedRules) || maxLength !== appliedMaxLength;
+    JSON.stringify(rules) !== JSON.stringify(appliedRules) ||
+    JSON.stringify(regexRules) !== JSON.stringify(appliedRegexRules) ||
+    maxLength !== appliedMaxLength;
   const selected = snapshot?.sections.find((section) => section.id === selectedId);
   const selectedIndex = snapshot?.sections.findIndex((section) => section.id === selectedId) ?? -1;
   const emptySections =
@@ -111,6 +126,7 @@ export function useDocumentSession() {
     }
     try {
       validateRules(rules, maxLength);
+      validateRegexRules(regexRules);
     } catch (caught) {
       setError((caught as Error).message);
       setTab('rules');
@@ -130,6 +146,7 @@ export function useDocumentSession() {
       file: nextFile,
       encoding: requestedEncoding,
       rules,
+      regexRules,
       maxTitleLength: maxLength,
     });
     setImportingFile(null);
@@ -143,8 +160,9 @@ export function useDocumentSession() {
     setPast([]);
     setFuture([]);
     setAppliedRules(structuredClone(rules));
+    setAppliedRegexRules(structuredClone(regexRules));
     setAppliedMaxLength(maxLength);
-    persistRules(rules, maxLength);
+    persistRules(rules, maxLength, regexRules);
     if (!sameFile) {
       setTitle(nextFile.name.replace(/\.txt$/i, ''));
       setAuthor('');
@@ -160,6 +178,7 @@ export function useDocumentSession() {
   async function applyRules() {
     try {
       validateRules(rules, maxLength);
+      validateRegexRules(regexRules);
     } catch (caught) {
       setError((caught as Error).message);
       return;
@@ -168,6 +187,7 @@ export function useDocumentSession() {
       const result = await perform<DocumentSnapshot>({
         type: 'analyze',
         rules,
+        regexRules,
         ignored,
         deleted,
         maxTitleLength: maxLength,
@@ -179,11 +199,33 @@ export function useDocumentSession() {
           ? id
           : (result.sections[0]?.id ?? null),
       );
+    } else if (regexRules.length) {
+      const checked = await testRegexRules('');
+      if (!checked) return;
     }
     setAppliedRules(structuredClone(rules));
+    setAppliedRegexRules(structuredClone(regexRules));
     setAppliedMaxLength(maxLength);
-    persistRules(rules, maxLength);
+    persistRules(rules, maxLength, regexRules);
     setToast('识别规则已应用。');
+  }
+  async function testRegexRules(sampleText?: string): Promise<RegexTestResult | null> {
+    try {
+      validateRules(rules, maxLength);
+      validateRegexRules(regexRules);
+    } catch (caught) {
+      setError((caught as Error).message);
+      return null;
+    }
+    return perform<RegexTestResult>({
+      type: 'test-rules',
+      rules,
+      regexRules,
+      maxTitleLength: maxLength,
+      ignored,
+      deleted,
+      sampleText,
+    });
   }
   async function changeCorrections(
     next: Corrections,
@@ -192,6 +234,7 @@ export function useDocumentSession() {
     const result = await perform<DocumentSnapshot>({
       type: 'analyze',
       rules: appliedRules,
+      regexRules: appliedRegexRules,
       ignored: next.ignored,
       deleted: next.deleted,
       maxTitleLength: appliedMaxLength,
@@ -314,6 +357,9 @@ export function useDocumentSession() {
   return {
     rules,
     setRules,
+    regexRules,
+    setRegexRules,
+    testRegexRules,
     maxLength,
     setMaxLength,
     snapshot,

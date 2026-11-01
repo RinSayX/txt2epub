@@ -1,5 +1,5 @@
 import { buildOutline } from './outline';
-import type { Checkpoint, Corrections, HeadingRule } from './types';
+import type { Checkpoint, Corrections, HeadingRule, RegexHeadingRule } from './types';
 
 // Keep every line separator so heading IDs and original line numbers stay stable.
 // The source is immutable: undo/redo rebuilds this working copy from the source.
@@ -9,6 +9,7 @@ export async function buildCorrectedOutline(
   corrections: Corrections,
   maxTitleLength: number,
   checkpoint: Checkpoint = async () => {},
+  regexRules: RegexHeadingRule[] = [],
 ) {
   let text = source;
   let sourceLineCount: number | undefined;
@@ -38,6 +39,7 @@ export async function buildCorrectedOutline(
     new Set(corrections.ignored),
     maxTitleLength,
     (value) => checkpoint(0.2 + value * 0.8),
+    regexRules,
   );
   // Deleted opening titles must not create a new empty preface in the EPUB.
   if (

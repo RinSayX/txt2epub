@@ -8,6 +8,26 @@ export interface HeadingRule {
   enabled: boolean;
 }
 
+export interface RegexHeadingRule {
+  id: string;
+  name: string;
+  pattern: string;
+  level: number;
+  enabled: boolean;
+}
+
+export interface RegexTestResult {
+  headingCount: number;
+  regexMatchCount: number;
+  samples: {
+    lineIndex: number;
+    original: string;
+    title: string;
+    ruleName: string;
+    level: number;
+  }[];
+}
+
 export interface Section {
   id: string;
   title: string;
@@ -20,6 +40,7 @@ export interface Section {
   parentId: string | null;
   suspicious: boolean;
   empty: boolean;
+  regexRuleId?: string;
 }
 
 export interface Corrections {
