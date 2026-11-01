@@ -61,7 +61,7 @@ describe('chapter identification and corrections', () => {
       })
       .join('');
     expect(reconstructed).toBe(text);
-    expect(outline.sections[0].title).toBe('前言');
+    expect(outline.sections[0].title).toBe('简介');
     expect(outline.sections[1].bodyEnd).toBe(outline.sections[2].headingStart);
   });
   it('keeps source order, supports sibling aliases and never invents absent levels', async () => {

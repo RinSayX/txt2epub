@@ -113,7 +113,7 @@ export async function buildOutline(
     // Keep even whitespace-only front matter, so no source range disappears.
     sections.unshift({
       id: 'frontmatter',
-      title: headingCount ? '前言' : '正文',
+      title: headingCount ? '简介' : '正文',
       lineIndex: null,
       headingStart: 0,
       bodyStart: 0,

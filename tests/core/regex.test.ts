@@ -44,7 +44,7 @@ describe('custom regular expression headings', () => {
     const partial = { ...prefix, pattern: String.raw`第[0-9]+章` };
     expect(
       (await analyze('前文第233章后文\n第234章\n正文', [partial])).sections.map((s) => s.title),
-    ).toEqual(['前言', '第234章']);
+    ).toEqual(['简介', '第234章']);
   });
 
   it('uses explicit regex priority before keywords and falls back when a regex is disabled', async () => {

@@ -38,7 +38,7 @@ describe('empty chapter deletion', () => {
         section.parentId,
       ]),
     ).toEqual([
-      ['前言', null, null],
+      ['简介', null, null],
       ['第一章 保留', 3, null],
       ['第三章 保留', 7, null],
     ]);
