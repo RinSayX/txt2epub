@@ -101,7 +101,7 @@ export default function ExportDialog({
         <p className="export-note">
           自动去除段首空白和章末空行。
           {removeBlankLines ? '已开启段间空行清理，正文每段仍独立。' : '保留段落之间的空行。'}
-          旧阅读器兼容性取决于具体软件或设备。
+          导出不附带排版样式，字体、行距及段间距由阅读器决定。旧阅读器兼容性取决于具体软件或设备。
         </p>
         <button className="button primary export-confirm" type="submit" disabled={!title.trim()}>
           <ArrowDownToLine size={17} />

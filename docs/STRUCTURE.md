@@ -33,7 +33,7 @@
 | 默认关键词和层级                                | `src/core/rules.ts`                                                            |
 | 文件大小提示阈值及编码选项                      | `src/config.ts`                                                                |
 | XHTML 拆片及 ZIP 条目顺序                       | `src/core/epub/generate.ts`                                                    |
-| XHTML、NAV、NCX、OPF、container.xml 和书内 CSS  | `src/core/epub/templates.ts`                                                   |
+| XHTML、NAV、NCX、OPF 和 container.xml           | `src/core/epub/templates.ts`                                                   |
 | XML 转义、合法字符检查和可选控制字符清理        | `src/core/epub/xml.ts`                                                         |
 | Worker 生命周期及请求响应                       | `src/workers/client.ts`、`protocol.ts`、`document.worker.ts`                   |
 | 下载文件名与 Blob 生命周期                      | `src/lib/download.ts`                                                          |

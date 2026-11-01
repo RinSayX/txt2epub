@@ -31,8 +31,7 @@ describe('optional blank line cleanup', () => {
       '<h1 id="heading">第一卷 分组</h1>',
     );
     for (const [path, content] of Object.entries(files)) {
-      if (path.startsWith('OEBPS/text/'))
-        expect(strFromU8(content)).not.toContain('<p class="blank">');
+      if (path.startsWith('OEBPS/text/')) expect(strFromU8(content)).not.toContain('<p>&#160;</p>');
     }
     expect(outline).toEqual(original);
     expect(paragraphs(await generateEpub(source, outline, metadata))).toContain('\u00A0');

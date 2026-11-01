@@ -232,7 +232,7 @@ describe('document Worker import', () => {
         removeBlankLines,
       });
       const chapter = strFromU8(unzipSync(result.bytes)['OEBPS/text/section-000001.xhtml']);
-      expect(chapter.includes('<p class="blank">')).toBe(!removeBlankLines);
+      expect(chapter.includes('<p>&#160;</p>')).toBe(!removeBlankLines);
       expect(chapter).toContain('<p>首段</p>');
       expect(chapter).toContain('<p>二段</p>');
     }

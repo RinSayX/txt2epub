@@ -23,7 +23,8 @@ export default function HelpDialog({ onClose }: { onClose: () => void }) {
         <p>
           <b>4. 导出 EPUB</b>
           如需去除正文段落之间的空行，可勾选“清理段间空行”，预览与导出同步生效，正文各段仍独立。填写书名与可选作者，下载
-          EPUB3。附带 NCX 目录，实际兼容性请用目标阅读器确认。若提示 U+001A
+          EPUB3。导出不附带排版样式，字体、行距和段间距由阅读器决定。附带 NCX
+          目录，实际兼容性请用目标阅读器确认。若提示 U+001A
           等隐藏控制字符，可重新打开导出窗口，勾选“清理不兼容的隐藏控制字符”后导出；源 TXT 不变。
         </p>
         <div className="help-privacy">

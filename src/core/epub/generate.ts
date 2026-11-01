@@ -8,7 +8,6 @@ import {
   removeInvalidXmlControls,
 } from './xml';
 import {
-  BOOK_STYLES,
   renderContainer,
   renderNavigation,
   renderNavigationDocument,
@@ -83,7 +82,6 @@ export async function generateEpub(
   };
   await add('mimetype', 'application/epub+zip', true);
   await add('META-INF/container.xml', renderContainer());
-  await add('OEBPS/styles/book.css', BOOK_STYLES);
 
   const targets = new Map<string, string>();
   const documents: EpubDocument[] = [];
@@ -123,7 +121,7 @@ export async function generateEpub(
       const end = newline < 0 || newline >= contentEnd ? contentEnd : newline;
       const line = stripParagraphIndent(clean(text.slice(position, end)));
       if (line.length || !options.removeBlankLines) {
-        const html = line.length ? `<p>${escapeXml(line)}</p>` : '<p class="blank">&#160;</p>';
+        const html = line.length ? `<p>${escapeXml(line)}</p>` : '<p>&#160;</p>';
         const bytes = strToU8(html).length + 5; // Four indentation spaces and one LF.
         if (size + bytes > SPLIT_SIZE && parts.length) await flush();
         parts.push(html);

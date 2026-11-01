@@ -42,7 +42,7 @@ describe('EPUB3 export', () => {
     expect(document.getElementsByTagName('tag')).toHaveLength(0);
     expect(document.getElementsByTagName('script')).toHaveLength(0);
   });
-  it('indents nested NAV/NCX entries and emits readable package, container and stylesheet files', async () => {
+  it('emits readable nested navigation and package files without any embedded or linked styles', async () => {
     const source = '第一卷 卷\n第一册 册\n第一章 章\n正文';
     const files = unzipSync(
       await generateEpub(source, await buildOutline(source, DEFAULT_RULES), metadata),
@@ -57,12 +57,18 @@ describe('EPUB3 export', () => {
     expect(ncx).toContain('\n        <navPoint ');
     expect(strFromU8(files['OEBPS/content.opf'])).toContain('\n  <manifest>\n    <item ');
     expect(strFromU8(files['META-INF/container.xml'])).toContain('\n  <rootfiles>\n    <rootfile ');
-    expect(strFromU8(files['OEBPS/styles/book.css'])).toContain(
-      'p {\n  margin: 0;\n  text-indent: 0;\n  white-space: pre-wrap;\n',
-    );
+    expect(Object.keys(files).filter((path) => /\.css$/i.test(path))).toEqual([]);
     for (const [path, bytes] of Object.entries(files)) {
-      if (/\.(xhtml|xml|ncx|opf|css)$/.test(path))
-        expect(strFromU8(bytes).endsWith('\n')).toBe(true);
+      if (!/\.(xhtml|xml|ncx|opf)$/.test(path)) continue;
+      expect(strFromU8(bytes).endsWith('\n')).toBe(true);
+      const document = new DOMParser().parseFromString(strFromU8(bytes), 'application/xml');
+      expect(document.getElementsByTagName('style')).toHaveLength(0);
+      for (const element of Array.from(document.getElementsByTagName('*'))) {
+        expect(element.hasAttribute('style')).toBe(false);
+        expect(element.hasAttribute('class')).toBe(false);
+        expect(element.getAttribute('rel')).not.toBe('stylesheet');
+        expect(element.getAttribute('media-type')).not.toBe('text/css');
+      }
     }
   });
   it('omits every trailing blank paragraph, keeps interior blank lines and leaves empty grouping sections without body paragraphs', async () => {
@@ -138,7 +144,7 @@ describe('EPUB3 export', () => {
       ([, doc]) => doc.getElementsByTagName('h1')[0]?.textContent === '第一章 风',
     )![1];
     expect(chapter.getElementsByTagName('p')[0].textContent).toBe('正文 <tag> & "引号"');
-    expect(chapter.getElementsByTagName('p')[1].getAttribute('class')).toBe('blank');
+    expect(chapter.getElementsByTagName('p')[1].textContent).toBe('\u00A0');
     expect(chapter.documentElement.textContent).toContain('第二卷 引用。');
     expect(chapter.documentElement.textContent).toContain('引用的下文');
     expect(
