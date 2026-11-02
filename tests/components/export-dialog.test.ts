@@ -10,7 +10,7 @@ describe('export cleanup consent', () => {
       createElement(ExportDialog, {
         title: '书名',
         author: '',
-        language: 'zh-Hans',
+        language: 'zh-CN',
         sectionCount: 1,
         removeBlankLines: false,
         setRemoveBlankLines: noop,

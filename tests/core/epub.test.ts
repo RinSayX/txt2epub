@@ -5,7 +5,7 @@ import { generateEpub } from '../../src/core/epub/generate';
 import { buildOutline } from '../../src/core/outline';
 import { DEFAULT_RULES } from '../../src/core/rules';
 
-const metadata = { title: '风 & 雨 <故事>', author: '某某 "作者"', language: 'zh-Hans' };
+const metadata = { title: '风 & 雨 <故事>', author: '某某 "作者"', language: 'zh-CN' };
 const text =
   '前言\n\n第一卷 山\n卷首说明\n第一章 风\n　正文 <tag> & "引号"\n\n次行😀\n第二卷 引用。\n引用的下文\n第二章 雨\n结束';
 
@@ -152,6 +152,7 @@ describe('EPUB3 export', () => {
     const opf = parsed.get('OEBPS/content.opf')!;
     expect(opf.documentElement.getAttribute('version')).toBe('3.0');
     expect(opf.getElementsByTagName('dc:title')[0].textContent).toBe(metadata.title);
+    expect(opf.getElementsByTagName('dc:language')[0].textContent).toBe('zh-CN');
     const items = [...Array.from(opf.getElementsByTagName('item'))];
     const ids = new Set(items.map((item) => item.getAttribute('id')));
     for (const item of items) expect(files[`OEBPS/${item.getAttribute('href')}`]).toBeDefined();

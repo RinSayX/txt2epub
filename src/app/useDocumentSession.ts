@@ -43,7 +43,7 @@ export function useDocumentSession() {
   const [toast, setToast] = useState('');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
-  const [language, setLanguage] = useState('zh-Hans');
+  const [language, setLanguage] = useState('zh-CN');
   const [pendingImport, setPendingImport] = useState<{ file: File; encoding: Encoding } | null>(
     null,
   );
@@ -166,7 +166,7 @@ export function useDocumentSession() {
     if (!sameFile) {
       setTitle(nextFile.name.replace(/\.txt$/i, ''));
       setAuthor('');
-      setLanguage('zh-Hans');
+      setLanguage('zh-CN');
     }
     setTab('outline');
     setToast(
