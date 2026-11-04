@@ -22,7 +22,7 @@ export function drawCover(canvas: HTMLCanvasElement, title: string): void {
     new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(name),
     ({ segment }) => segment,
   );
-  let fontSize = 60;
+  let fontSize = 72;
   let lines: string[];
   // Measure the actual browser font; reduce its size until the entire title fits.
   for (;;) {

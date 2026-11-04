@@ -2,7 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 import { DEFAULT_RULES } from '../../src/core/rules';
 import type { DocumentSnapshot, Preview } from '../../src/core/types';
-import type { ExportResult, WorkerRequest, WorkerResponse } from '../../src/workers/protocol';
+import type {
+  EpubToTxtResult,
+  ExportResult,
+  WorkerRequest,
+  WorkerResponse,
+} from '../../src/workers/protocol';
+import { epubFixture } from '../helpers/epub-fixture';
 
 interface TestWorker {
   onmessage: ((event: MessageEvent<WorkerRequest>) => Promise<void>) | null;
@@ -53,6 +59,47 @@ describe('document Worker import', () => {
     );
     expect(plain['OEBPS/images/cover.png']).toBeUndefined();
     expect(plain['OEBPS/cover.xhtml']).toBeUndefined();
+  });
+
+  it('returns UTF-8 TXT bytes and a bounded preview without replacing the loaded TXT session', async () => {
+    const snapshot = await request<DocumentSnapshot>({
+      id: 1,
+      type: 'load',
+      file: new File(['第一章 原书\n原书正文'], '原书.txt'),
+      encoding: 'auto',
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    const result = await request<EpubToTxtResult>({
+      id: 2,
+      type: 'epub-to-txt',
+      file: new File([epubFixture() as BlobPart], '另一本.epub'),
+    });
+    expect(strFromU8(result.bytes)).toBe('第一章 风\n正文😀 & 雨\n');
+    expect(result.title).toBe('山 & 海');
+    expect(result.preview).toBe(strFromU8(result.bytes));
+    expect(result.documentCount).toBe(1);
+    const preview = await request<Preview>({
+      id: 3,
+      type: 'preview',
+      sectionId: snapshot.sections[0].id,
+      offset: 0,
+    });
+    expect(preview.text).toBe('原书正文');
+    await worker.onmessage!({
+      data: { id: 4, type: 'epub-to-txt', file: new File(['bad'], 'broken.epub') },
+    } as MessageEvent<WorkerRequest>);
+    expect(messages.find((message) => message.id === 4 && message.type === 'error')).toBeDefined();
+    expect(
+      (
+        await request<Preview>({
+          id: 5,
+          type: 'preview',
+          sectionId: snapshot.sections[0].id,
+          offset: 0,
+        })
+      ).text,
+    ).toBe('原书正文');
   });
 
   it('deletes empty titles in preview and EPUB, supports merge/undo/redo and rule reapplication', async () => {

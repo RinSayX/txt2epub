@@ -38,10 +38,12 @@
 | Worker 生命周期及请求响应                       | `src/workers/client.ts`、`protocol.ts`、`document.worker.ts`                   |
 | 下载文件名与 Blob 生命周期                      | `src/lib/download.ts`                                                          |
 | 自动封面绘制、PNG 编码与实时预览                | `src/lib/cover.ts`、`src/components/CoverPreview.tsx`                          |
+| EPUB 转 TXT 的容器解析、阅读顺序与文本提取      | `src/core/epub/extract.ts`                                                     |
+| EPUB 转 TXT 的独立会话及窗口                    | `src/app/useEpubConversion.ts`、`src/components/EpubToTxtDialog.tsx`           |
 
 ## 依赖边界
 
-- `core/` 负责文本及电子书领域逻辑，不依赖 React、页面组件或 Worker 入口。EPUB 唯一外部运行依赖仍为 fflate；唯一标识通过浏览器和 Node 均支持的 crypto API 生成。
+- `core/` 负责文本及电子书领域逻辑，不依赖 React、页面组件或 Worker 入口。fflate 负责 ZIP 打包/解包，xmldom 用于 EPUB 输入的 XML/XHTML 解析；唯一标识通过浏览器和 Node 均支持的 crypto API 生成。
 - `workers/` 调用核心模块，负责后台任务、进度、取消和传输。
 - `app/` 管理会话及浏览器交互，组合 `components/`。
 - `components/` 接收数据和回调，不直接管理 Worker 或生成 EPUB。

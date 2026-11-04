@@ -1,10 +1,11 @@
 /// <reference lib="webworker" />
 import { generateEpub } from '../core/epub/generate';
+import { extractEpub } from '../core/epub/extract';
 import { sectionPreview } from '../core/outline';
 import { decodeText } from '../core/encoding';
 import { buildCorrectedOutline } from '../core/corrections';
 import type { DocumentSnapshot, RegexTestResult } from '../core/types';
-import type { WorkerRequest, WorkerResponse } from './protocol';
+import type { EpubToTxtResult, WorkerRequest, WorkerResponse } from './protocol';
 import type { AnalysisJob } from './analysis-protocol';
 import { startAnalysis } from './analysis-runner';
 
@@ -57,7 +58,30 @@ worker.onmessage = async ({ data: request }: MessageEvent<WorkerRequest>) => {
     check();
   };
   try {
-    if (request.type === 'load') {
+    if (request.type === 'epub-to-txt') {
+      if (!/\.epub$/i.test(request.file.name)) throw new Error('请选择 .epub 格式的电子书。');
+      await progress(0, '读取 EPUB');
+      const input = new Uint8Array(await request.file.arrayBuffer());
+      check();
+      const extracted = await extractEpub(input, (value) =>
+        progress(value * 0.95, '提取 EPUB 正文'),
+      );
+      const bytes = new TextEncoder().encode(extracted.text);
+      await progress(1, '生成 TXT');
+      const payload: EpubToTxtResult = {
+        bytes,
+        title: extracted.metadata.title || request.file.name.replace(/\.epub$/i, ''),
+        author: extracted.metadata.author,
+        documentCount: extracted.documentCount,
+        skippedCount: extracted.skippedCount,
+        characterCount: extracted.text.length,
+        preview: extracted.text.slice(
+          0,
+          /[\uD800-\uDBFF]/.test(extracted.text[3999] ?? '') ? 3999 : 4000,
+        ),
+      };
+      send({ id, type: 'result', payload }, [bytes.buffer as ArrayBuffer]);
+    } else if (request.type === 'load') {
       await progress(0.02, '读取文件');
       const bytes = new Uint8Array(await request.file.arrayBuffer());
       check();

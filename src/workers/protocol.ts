@@ -30,6 +30,7 @@ export type WorkerRequest =
       sampleText?: string;
     }
   | { id: number; type: 'preview'; sectionId: string; offset: number }
+  | { id: number; type: 'epub-to-txt'; file: File }
   | {
       id: number;
       type: 'export';
@@ -51,4 +52,14 @@ export type Request = WithoutId<Exclude<WorkerRequest, { type: 'cancel' }>>;
 export interface ExportResult {
   bytes: Uint8Array;
   cleanedControlCount: number;
+}
+
+export interface EpubToTxtResult {
+  bytes: Uint8Array;
+  title: string;
+  author: string;
+  documentCount: number;
+  skippedCount: number;
+  characterCount: number;
+  preview: string;
 }

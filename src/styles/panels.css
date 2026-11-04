@@ -420,6 +420,59 @@
   width: 100%;
   min-height: 42px;
 }
+.epub-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 14px;
+  border: 1px dashed #c4cfb6;
+  border-radius: 7px;
+  color: #667759;
+  font-size: 12px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.epub-dropzone.dragging {
+  background: #eef3e6;
+  border-color: var(--green);
+}
+.epub-dropzone p {
+  margin: 0;
+}
+.epub-progress,
+.epub-result {
+  margin-top: 18px;
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.epub-progress progress {
+  width: 100%;
+  accent-color: var(--green);
+}
+.epub-progress .text-button {
+  margin-top: 8px;
+}
+.epub-text-preview {
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #dce2d2;
+  border-radius: 5px;
+  background: #fffefa;
+  color: #44503c;
+  font: inherit;
+  line-height: 1.7;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+.epub-download-status {
+  color: var(--green);
+  font-size: 12px;
+}
 .help-content {
   font-size: 12px;
   color: #8b987d;

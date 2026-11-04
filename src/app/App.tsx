@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ArrowDownToLine,
   ArrowLeft,
+  ArrowLeftRight,
   ArrowRight,
   BookOpen,
   Check,
@@ -30,6 +31,7 @@ import BookPreview from '../components/BookPreview';
 import FileInfo from '../components/FileInfo';
 import ExportDialog from '../components/ExportDialog';
 import HelpDialog from '../components/HelpDialog';
+import EpubToTxtDialog from '../components/EpubToTxtDialog';
 import { useDocumentSession } from './useDocumentSession';
 
 export default function App() {
@@ -87,7 +89,7 @@ export default function App() {
     cancel,
   } = useDocumentSession();
   const [fontSize, setFontSize] = useState(18);
-  const [dialog, setDialog] = useState<'export' | 'help' | null>(null);
+  const [dialog, setDialog] = useState<'export' | 'help' | 'epub-to-txt' | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   function onFiles(event: ChangeEvent<HTMLInputElement>) {
     const selectedFile = event.target.files?.[0];
@@ -130,7 +132,7 @@ export default function App() {
           <div>
             <div className="eyebrow">
               <span className="tiny-dot" />
-              TXT TO EPUB · 把文字装订成书
+              TXT ↔ EPUB · 让文字自由流转
             </div>
             <h1>{snapshot ? '故事已就绪，整理每一页。' : '让故事，成册。'}</h1>
             <p>
@@ -140,6 +142,14 @@ export default function App() {
             </p>
           </div>
           <div className="page-actions">
+            <button
+              className="button secondary"
+              disabled={!!busy}
+              onClick={() => setDialog('epub-to-txt')}
+            >
+              <ArrowLeftRight size={16} />
+              EPUB 转 TXT
+            </button>
             <button
               className="button secondary"
               disabled={!!busy}
@@ -506,6 +516,7 @@ export default function App() {
         />
       )}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
+      {dialog === 'epub-to-txt' && <EpubToTxtDialog onClose={() => setDialog(null)} />}
       {pendingImport && (
         <Dialog title="重新导入文件？" onClose={() => setPendingImport(null)}>
           <p className="dialog-intro">

@@ -131,3 +131,13 @@ EPUBCheck 5.4.0 本次输出使用 EPUB 3.4 规则验证；生成器的 OPF 版�
 - 新增绘制边界、200 字符长书名、字素完整性、PNG 编码失败、EPUB 资源/封面元数据、可选导出及 Worker 协议回归；`npm test` 共 79 项通过，6 项规模测试按默认配置跳过。本次变更不涉及文本规模处理，未重跑规模测试。
 - 浏览器实际验证默认不勾选、空白书名禁用导出、长书名换行预览，并下载带封面的 EPUB。解包确认 PNG 签名及尺寸为 600 × 800，封面图片、manifest 和首个 spine 引用正确，XML 均可解析、无 CSS；目视检查白底、书名居中偏上及完整换行。此次未重跑 EPUBCheck 或阅读器实机验证。
 - 生产构建、Prettier 与 diff 空白检查通过。界面截图 `artifacts/auto-cover-preview.png`，从实际 EPUB 解包的封面 `artifacts/auto-cover.png`（均为本地验收产物，不纳入 Git）。
+
+## EPUB 转 TXT（2026-11-04）
+
+- 新增独立转换入口、会话 Hook、Worker 请求和核心提取模块。支持 EPUB2/3 的 XHTML 正文，按 OPF spine 排序，保留已有标题、段落、br、pre、字符实体与 Unicode；不按目录或文件名制造标题。封面、目录、重复引用与无文本条目略过，目录/封面锚点只过滤对应区域。
+- 核心测试覆盖不同 ZIP/manifest/spine 顺序、EPUB2、UTF-16、相对/编码路径、同文件目录与正文、空段落、行内标签、CDATA、列表/表格、脚本/样式/隐藏元素、正文加密与字体混淆区别、缺失及损坏资源、图片型文档、取消，以及本项目生成带封面/长章节拆片的 EPUB 回转提取。
+- Worker 测试核对返回的 UTF-8 字节、书名和预览，并在转换成功及失败后检查原 TXT 会话未被覆盖。下载适配器测试验证 UTF-8 原始字节、Unicode 文件名清理、TXT/EPUB MIME 及 Object URL 释放。
+- `npm test` 共 97 项通过，6 项规模测试按默认配置跳过；生产构建、Prettier 和 diff 空白检查通过。此次未重跑原有的全部规模测试。
+- 浏览器实际导入两正文文档的 EPUB：顺序、标题、中文、emoji、特殊字符和结果统计正确；关闭窗口后原 TXT 的目录及正文仍保留。使用此前生成的约 20 MiB 正文规模 EPUB 检查取消，并重新选择小样本转换成功。最终文本预览框占满内容宽度；浏览器 warning/error 日志为空。
+- 浏览器点击“下载 TXT”触发生成/下载提示；自动化捕获下载事件超时，未获得可读取的实际下载路径，因此未确认浏览器落盘文件。TXT 字节和 Blob 内容已经自动化核对，不能将该检查等同于浏览器文件落盘验收。
+- 使用说明见 `docs/EPUB_TO_TXT.md`。截图 `artifacts/epub-to-txt-preview.png` 和合成输入 `artifacts/reverse-sample.epub` 为本地验证产物，不纳入 Git。

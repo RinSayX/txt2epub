@@ -3,7 +3,7 @@ import Dialog from './Dialog';
 
 export default function HelpDialog({ onClose }: { onClose: () => void }) {
   return (
-    <Dialog title="从纯文本，到一本书" onClose={onClose}>
+    <Dialog title="TXT 与 EPUB，本地互转" onClose={onClose}>
       <div className="help-content">
         <p>
           <b>1. 导入小说</b>选择 TXT 文件，超过 50 MiB
@@ -26,6 +26,12 @@ export default function HelpDialog({ onClose }: { onClose: () => void }) {
           EPUB3。导出不附带排版样式，字体、行距和段间距由阅读器决定。附带 NCX
           目录，实际兼容性请用目标阅读器确认。若提示 U+001A
           等隐藏控制字符，可重新打开导出窗口，勾选“清理不兼容的隐藏控制字符”后导出；源 TXT 不变。
+        </p>
+        <p>
+          <b>5. EPUB 转 TXT</b>
+          点击页面上方“EPUB 转 TXT”，选择或拖入未加密的 EPUB，按书内阅读顺序提取文字，检查预览后下载
+          UTF-8 TXT。 标题和正文段落保留，封面、目录页、图片和样式略过；不进行图片文字识别，不支持
+          DRM 加密正文。 此转换窗口独立运行，不覆盖当前正在整理的 TXT。
         </p>
         <div className="help-privacy">
           <ShieldCheck size={20} />
