@@ -43,6 +43,8 @@
 
 ## 依赖边界
 
+编号解析位于 `src/core/numbering.ts`，连续性检测位于 `src/core/continuity.ts`；报告窗口位于 `src/components/ContinuityDialog.tsx`。标题识别时保存编号元信息，文档会话 Hook 通过 Worker 请求检查并管理会话内确认；`OutlineList` 接收定位请求以清除搜索和展开祖先目录。
+
 - `core/` 负责文本及电子书领域逻辑，不依赖 React、页面组件或 Worker 入口。fflate 负责 ZIP 打包/解包，xmldom 用于 EPUB 输入的 XML/XHTML 解析；唯一标识通过浏览器和 Node 均支持的 crypto API 生成。
 - `workers/` 调用核心模块，负责后台任务、进度、取消和传输。
 - `app/` 管理会话及浏览器交互，组合 `components/`。

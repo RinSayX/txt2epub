@@ -7,6 +7,8 @@ import type {
   Preview,
   RegexHeadingRule,
   RegexTestResult,
+  ContinuityOptions,
+  ContinuityResult,
 } from '../core/types';
 import { validateRules } from '../core/outline';
 import { validateRegexRules } from '../core/regex';
@@ -14,6 +16,7 @@ import { DocumentClient } from '../workers/client';
 import type { ExportResult, Request } from '../workers/protocol';
 import { downloadEpub } from '../lib/download';
 import { readPreferences, persistRules } from './preferences';
+import { continuityKey, DEFAULT_CONTINUITY_OPTIONS } from '../core/continuity';
 
 export function useDocumentSession() {
   const [preferences] = useState(readPreferences);
@@ -44,6 +47,11 @@ export function useDocumentSession() {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [language, setLanguage] = useState('zh-CN');
+  const [continuityOptions, setContinuityOptions] = useState<ContinuityOptions>(() =>
+    structuredClone(DEFAULT_CONTINUITY_OPTIONS),
+  );
+  const [continuity, setContinuity] = useState<ContinuityResult | null>(null);
+  const [confirmedNumbering, setConfirmedNumbering] = useState<Set<string>>(new Set());
   const [pendingImport, setPendingImport] = useState<{ file: File; encoding: Encoding } | null>(
     null,
   );
@@ -78,7 +86,15 @@ export function useDocumentSession() {
     if (locked.current || !client.current) return null;
     locked.current = true;
     setError('');
-    setBusy({ label: request.type === 'export' ? '生成 EPUB' : '整理章节', progress: 0 });
+    setBusy({
+      label:
+        request.type === 'export'
+          ? '生成 EPUB'
+          : request.type === 'check-numbering'
+            ? '检查章节编号'
+            : '整理章节',
+      progress: 0,
+    });
     try {
       return await client.current.call<T>(request, (progress, label) =>
         setBusy({ progress, label }),
@@ -93,6 +109,24 @@ export function useDocumentSession() {
       setBusy(null);
     }
   }, []);
+
+  useEffect(() => {
+    let stale = false;
+    setContinuity(null);
+    setConfirmedNumbering(new Set());
+    if (snapshot)
+      void perform<ContinuityResult>({
+        type: 'check-numbering',
+        documentId: snapshot.documentId,
+        revision: snapshot.revision,
+        options: continuityOptions,
+      }).then((result) => {
+        if (!stale && result) setContinuity(result);
+      });
+    return () => {
+      stale = true;
+    };
+  }, [snapshot, continuityOptions, perform]);
 
   useEffect(() => {
     if (!snapshot || !selectedId || !client.current) {
@@ -389,6 +423,23 @@ export function useDocumentSession() {
     setAuthor,
     language,
     setLanguage,
+    continuity:
+      continuity &&
+      continuity.documentId === snapshot?.documentId &&
+      continuity.revision === snapshot.revision &&
+      continuity.optionsKey === continuityKey(continuityOptions)
+        ? continuity
+        : null,
+    continuityOptions,
+    setContinuityOptions,
+    confirmedNumbering,
+    toggleNumberingConfirmation: (id: string) =>
+      setConfirmedNumbering((previous) => {
+        const next = new Set(previous);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      }),
     pendingImport,
     setPendingImport,
     dirty,

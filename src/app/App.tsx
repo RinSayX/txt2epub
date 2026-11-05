@@ -32,6 +32,7 @@ import FileInfo from '../components/FileInfo';
 import ExportDialog from '../components/ExportDialog';
 import HelpDialog from '../components/HelpDialog';
 import EpubToTxtDialog from '../components/EpubToTxtDialog';
+import ContinuityDialog from '../components/ContinuityDialog';
 import { useDocumentSession } from './useDocumentSession';
 
 export default function App() {
@@ -69,6 +70,11 @@ export default function App() {
     setAuthor,
     language,
     setLanguage,
+    continuity,
+    continuityOptions,
+    setContinuityOptions,
+    confirmedNumbering,
+    toggleNumberingConfirmation,
     pendingImport,
     setPendingImport,
     dirty,
@@ -89,7 +95,10 @@ export default function App() {
     cancel,
   } = useDocumentSession();
   const [fontSize, setFontSize] = useState(18);
-  const [dialog, setDialog] = useState<'export' | 'help' | 'epub-to-txt' | null>(null);
+  const [dialog, setDialog] = useState<'export' | 'help' | 'epub-to-txt' | 'numbering' | null>(
+    null,
+  );
+  const [revealTarget, setRevealTarget] = useState<{ id: string; token: number } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   function onFiles(event: ChangeEvent<HTMLInputElement>) {
     const selectedFile = event.target.files?.[0];
@@ -203,6 +212,22 @@ export default function App() {
             }}
           />
         )}
+        {snapshot && (
+          <div className="numbering-summary">
+            <span>
+              {continuity
+                ? `编号检查：${continuity.issues.filter((issue) => !confirmedNumbering.has(issue.id)).length} 个待确认问题 · ${continuity.unparsed.length} 个未解析标题`
+                : '编号检查尚未完成'}
+            </span>
+            <button
+              className="text-button"
+              disabled={!!busy && busy.label !== '检查章节编号'}
+              onClick={() => setDialog('numbering')}
+            >
+              查看编号检查
+            </button>
+          </div>
+        )}
         {snapshot?.encodingUncertain && (
           <div className="notice info">
             <AlertCircle size={16} />
@@ -247,6 +272,7 @@ export default function App() {
                 sections={snapshot?.sections ?? []}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                revealTarget={revealTarget}
               />
             ) : (
               <RulesPanel
@@ -517,6 +543,26 @@ export default function App() {
       )}
       {dialog === 'help' && <HelpDialog onClose={() => setDialog(null)} />}
       {dialog === 'epub-to-txt' && <EpubToTxtDialog onClose={() => setDialog(null)} />}
+      {dialog === 'numbering' && snapshot && (
+        <ContinuityDialog
+          snapshot={snapshot}
+          result={continuity}
+          options={continuityOptions}
+          onOptions={setContinuityOptions}
+          confirmed={confirmedNumbering}
+          error={error}
+          onConfirm={toggleNumberingConfirmation}
+          busy={!!busy}
+          onCancel={cancel}
+          onClose={() => setDialog(null)}
+          onNavigate={(id) => {
+            setSelectedId(id);
+            setTab('outline');
+            setRevealTarget((previous) => ({ id, token: (previous?.token ?? 0) + 1 }));
+            setDialog(null);
+          }}
+        />
+      )}
       {pendingImport && (
         <Dialog title="重新导入文件？" onClose={() => setPendingImport(null)}>
           <p className="dialog-intro">

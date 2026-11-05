@@ -6,16 +6,29 @@ interface Props {
   sections: Section[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  revealTarget?: { id: string; token: number } | null;
 }
 
 const ROW_HEIGHT = 43;
 
-export default function OutlineList({ sections, selectedId, onSelect }: Props) {
+export default function OutlineList({ sections, selectedId, onSelect, revealTarget }: Props) {
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [scrollTop, setScrollTop] = useState(0);
   const [height, setHeight] = useState(500);
   const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!revealTarget) return;
+    const byId = new Map(sections.map((section) => [section.id, section]));
+    const ancestors = new Set<string>();
+    let parent = byId.get(revealTarget.id)?.parentId;
+    while (parent && !ancestors.has(parent)) {
+      ancestors.add(parent);
+      parent = byId.get(parent)?.parentId;
+    }
+    setQuery('');
+    setCollapsed((previous) => new Set([...previous].filter((id) => !ancestors.has(id))));
+  }, [revealTarget, sections]);
   const parents = useMemo(() => new Set(sections.map((section) => section.parentId)), [sections]);
   const visible = useMemo(() => {
     if (query.trim())

@@ -473,6 +473,73 @@
   color: var(--green);
   font-size: 12px;
 }
+.numbering-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: #eef3e6;
+  border-radius: 6px;
+  color: #667759;
+  font-size: 12px;
+}
+.numbering-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dce2d2;
+  color: #667759;
+  font-size: 11px;
+}
+.numbering-units label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.numbering-progress,
+.numbering-counts,
+.numbering-empty {
+  margin: 18px 0;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.numbering-progress .text-button {
+  margin-left: 12px;
+}
+.numbering-issue {
+  padding: 14px 0;
+  border-top: 1px solid #dce2d2;
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.numbering-issue strong {
+  display: block;
+}
+.numbering-issue p {
+  color: #667759;
+  font-size: 11px;
+  margin: 4px 0;
+}
+.numbering-kind {
+  font-size: 10px;
+  color: #996729;
+}
+.numbering-links {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 8px 0;
+}
+.numbering-links .text-button {
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+}
 .help-content {
   font-size: 12px;
   color: #8b987d;

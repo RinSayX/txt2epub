@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
 import { DEFAULT_RULES } from '../../src/core/rules';
-import type { DocumentSnapshot, Preview } from '../../src/core/types';
+import type { ContinuityResult, DocumentSnapshot, Preview } from '../../src/core/types';
+import { DEFAULT_CONTINUITY_OPTIONS } from '../../src/core/continuity';
 import type {
   EpubToTxtResult,
   ExportResult,
@@ -37,6 +38,56 @@ describe('document Worker import', () => {
     if (response?.type !== 'result') throw new Error(JSON.stringify(response));
     return response.payload as T;
   }
+
+  it('checks current numbering, updates after corrections and rejects stale report requests', async () => {
+    const initial = await request<DocumentSnapshot>({
+      id: 1,
+      type: 'load',
+      file: new File(['第一章 开始\n正文\n第二章 空\n第三章 结束\n正文'], '编号.txt'),
+      encoding: 'auto',
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    const inspect = (id: number, data: DocumentSnapshot) =>
+      request<ContinuityResult>({
+        id,
+        type: 'check-numbering',
+        documentId: data.documentId,
+        revision: data.revision,
+        options: DEFAULT_CONTINUITY_OPTIONS,
+      });
+    expect((await inspect(2, initial)).issues).toEqual([]);
+    const changed = await request<DocumentSnapshot>({
+      id: 3,
+      type: 'analyze',
+      ignored: [],
+      deleted: [2],
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    expect((await inspect(4, changed)).issues[0].message).toContain('第2章');
+    await worker.onmessage!({
+      data: {
+        id: 5,
+        type: 'check-numbering',
+        documentId: initial.documentId,
+        revision: initial.revision,
+        options: DEFAULT_CONTINUITY_OPTIONS,
+      },
+    } as MessageEvent<WorkerRequest>);
+    expect(messages.find((message) => message.id === 5 && message.type === 'error')).toMatchObject({
+      message: expect.stringContaining('目录已更新'),
+    });
+    const undone = await request<DocumentSnapshot>({
+      id: 6,
+      type: 'analyze',
+      ignored: [],
+      deleted: [],
+      rules: DEFAULT_RULES,
+      maxTitleLength: 60,
+    });
+    expect((await inspect(7, undone)).issues).toEqual([]);
+  });
 
   it('passes the selected cover through the export protocol without adding one by default', async () => {
     await request<DocumentSnapshot>({

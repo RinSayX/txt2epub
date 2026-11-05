@@ -1,4 +1,10 @@
-import type { BookMetadata, Encoding, HeadingRule, RegexHeadingRule } from '../core/types';
+import type {
+  BookMetadata,
+  ContinuityOptions,
+  Encoding,
+  HeadingRule,
+  RegexHeadingRule,
+} from '../core/types';
 
 export type WorkerRequest =
   | {
@@ -30,6 +36,13 @@ export type WorkerRequest =
       sampleText?: string;
     }
   | { id: number; type: 'preview'; sectionId: string; offset: number }
+  | {
+      id: number;
+      type: 'check-numbering';
+      documentId: string;
+      revision: number;
+      options: ContinuityOptions;
+    }
   | { id: number; type: 'epub-to-txt'; file: File }
   | {
       id: number;

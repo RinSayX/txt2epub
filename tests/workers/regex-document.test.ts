@@ -3,11 +3,13 @@ import { strFromU8, unzipSync } from 'fflate';
 import { buildCorrectedOutline } from '../../src/core/corrections';
 import { DEFAULT_RULES } from '../../src/core/rules';
 import { PREFIX_CHAPTER_PATTERN } from '../../src/core/regex';
+import { DEFAULT_CONTINUITY_OPTIONS } from '../../src/core/continuity';
 import type {
   DocumentSnapshot,
   Preview,
   RegexHeadingRule,
   RegexTestResult,
+  ContinuityResult,
 } from '../../src/core/types';
 import type { AnalysisJob } from '../../src/workers/analysis-protocol';
 import type { ExportResult, WorkerRequest, WorkerResponse } from '../../src/workers/protocol';
@@ -72,6 +74,21 @@ describe('regex rules in document sessions', () => {
       deleted,
       maxTitleLength: 60,
     });
+
+  it('preserves numbering through the isolated regex analysis path and checks corrected titles', async () => {
+    const initial = await load();
+    expect(initial.sections.map((section) => section.numbering?.value)).toEqual([1, 233, 234, 235]);
+    const corrected = await analyze(2, [], [3]);
+    const result = await request<ContinuityResult>({
+      id: 3,
+      type: 'check-numbering',
+      documentId: corrected.documentId,
+      revision: corrected.revision,
+      options: DEFAULT_CONTINUITY_OPTIONS,
+    });
+    expect(result.issues[0].message).toContain('第234章');
+    expect(result.issues[0].sectionIds).toEqual(['line-1', 'line-4']);
+  });
 
   it('uses extracted titles for import/export and preserves original text through merge, delete and undo', async () => {
     const initial = await load();

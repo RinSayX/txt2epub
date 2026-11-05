@@ -41,6 +41,40 @@ export interface Section {
   suspicious: boolean;
   empty: boolean;
   regexRuleId?: string;
+  numbering?: SectionNumbering;
+}
+
+export interface SectionNumbering {
+  raw: string;
+  value: number | null;
+  unit: string;
+  label: string;
+  part?: '上' | '中' | '下';
+}
+
+export interface ContinuityOptions {
+  scope: 'book' | 'volume';
+  units: string[];
+  strictParts: boolean;
+}
+
+export interface ContinuityIssue {
+  id: string;
+  kind: 'gap' | 'duplicate' | 'order';
+  message: string;
+  scope: string;
+  sectionIds: string[];
+}
+
+export interface ContinuityResult {
+  documentId: string;
+  revision: number;
+  optionsKey: string;
+  issues: ContinuityIssue[];
+  unparsed: string[];
+  splits: { label: string; sectionIds: string[] }[];
+  checkedCount: number;
+  excludedCount: number;
 }
 
 export interface Corrections {

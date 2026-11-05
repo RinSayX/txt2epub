@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { generateEpub } from '../core/epub/generate';
 import { extractEpub } from '../core/epub/extract';
+import { checkContinuity } from '../core/continuity';
 import { sectionPreview } from '../core/outline';
 import { decodeText } from '../core/encoding';
 import { buildCorrectedOutline } from '../core/corrections';
@@ -182,6 +183,18 @@ worker.onmessage = async ({ data: request }: MessageEvent<WorkerRequest>) => {
         })),
       };
       send({ id, type: 'result', payload });
+    } else if (request.type === 'check-numbering') {
+      if (
+        !state ||
+        state.snapshot.documentId !== request.documentId ||
+        state.snapshot.revision !== request.revision
+      )
+        throw new Error('目录已更新，请重新检查章节编号。');
+      const result = await checkContinuity(state.snapshot, request.options, (value) =>
+        progress(value, '检查章节编号'),
+      );
+      check();
+      send({ id, type: 'result', payload: result });
     } else if (request.type === 'preview') {
       if (!state) throw new Error('请先导入 TXT 文件。');
       const section = state.snapshot.sections.find((item) => item.id === request.sectionId);
