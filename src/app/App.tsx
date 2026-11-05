@@ -8,6 +8,7 @@ import {
   BookOpen,
   Check,
   ChevronRight,
+  Github,
   HelpCircle,
   ListTree,
   LoaderCircle,
@@ -162,6 +163,15 @@ export default function App() {
             <ShieldCheck size={15} />
             文件仅在本地处理
           </span>
+          <a
+            className="github-link"
+            href="https://github.com/RinSayX/txt2epub"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="在 GitHub 上为拾页点 Star（新标签页）"
+          >
+            <Github size={20} aria-hidden="true" />
+          </a>
           <button className="help-button" aria-label="使用帮助" onClick={() => setDialog('help')}>
             <HelpCircle size={17} />
             <span>使用帮助</span>
