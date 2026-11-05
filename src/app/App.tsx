@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import {
   AlertCircle,
   ArrowDownToLine,
@@ -34,6 +34,8 @@ import HelpDialog from '../components/HelpDialog';
 import EpubToTxtDialog from '../components/EpubToTxtDialog';
 import ContinuityDialog from '../components/ContinuityDialog';
 import { useDocumentSession } from './useDocumentSession';
+
+const MOBILE_WORKSPACE = '(max-width: 760px)';
 
 export default function App() {
   const {
@@ -99,7 +101,38 @@ export default function App() {
     null,
   );
   const [revealTarget, setRevealTarget] = useState<{ id: string; token: number } | null>(null);
+  const [mobileReaderDocumentId, setMobileReaderDocumentId] = useState<string | null>(null);
+  const [mobileJump, setMobileJump] = useState<{ focusReader: boolean } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const workspaceRef = useRef<HTMLElement>(null);
+  const readerTitleRef = useRef<HTMLSpanElement>(null);
+  const mobilePanel =
+    tab === 'rules'
+      ? 'rules'
+      : !snapshot || mobileReaderDocumentId === snapshot.documentId
+        ? 'reader'
+        : 'outline';
+
+  useEffect(() => {
+    if (!mobileJump) return;
+    workspaceRef.current?.scrollIntoView({ block: 'start' });
+    if (mobileJump.focusReader) readerTitleRef.current?.focus({ preventScroll: true });
+  }, [mobileJump]);
+
+  function openReader(id: string | null, focusReader = true) {
+    if (id !== null) setSelectedId(id);
+    if (!window.matchMedia(MOBILE_WORKSPACE).matches) return;
+    setTab('outline');
+    setMobileReaderDocumentId(snapshot?.documentId ?? null);
+    setMobileJump({ focusReader });
+  }
+
+  function openMobileSidebar(panel: 'outline' | 'rules') {
+    setTab(panel);
+    setMobileReaderDocumentId(null);
+    setMobileJump({ focusReader: false });
+  }
+
   function onFiles(event: ChangeEvent<HTMLInputElement>) {
     const selectedFile = event.target.files?.[0];
     event.target.value = '';
@@ -249,9 +282,36 @@ export default function App() {
         )}
 
         <section
+          ref={workspaceRef}
           className={`workspace ${snapshot ? 'has-document' : ''}`}
+          data-mobile-panel={mobilePanel}
           aria-label="小说整理工作台"
         >
+          <div className="mobile-workspace-nav" role="group" aria-label="工作台视图">
+            <button
+              aria-pressed={snapshot ? mobilePanel === 'outline' : mobilePanel === 'reader'}
+              onClick={() => openMobileSidebar('outline')}
+            >
+              {snapshot ? <ListTree size={17} /> : <Upload size={17} />}
+              {snapshot ? '章节目录' : '导入文件'}
+            </button>
+            {snapshot && (
+              <button
+                aria-pressed={mobilePanel === 'reader'}
+                onClick={() => openReader(selectedId, false)}
+              >
+                <BookOpen size={17} />
+                正文预览
+              </button>
+            )}
+            <button
+              aria-pressed={mobilePanel === 'rules'}
+              onClick={() => openMobileSidebar('rules')}
+            >
+              <Settings2 size={17} />
+              识别规则{dirty && <span className="dirty-dot" />}
+            </button>
+          </div>
           <aside className="sidebar">
             <div className="sidebar-tabs">
               <button
@@ -271,7 +331,7 @@ export default function App() {
                 key={snapshot?.documentId ?? 'empty'}
                 sections={snapshot?.sections ?? []}
                 selectedId={selectedId}
-                onSelect={setSelectedId}
+                onSelect={openReader}
                 revealTarget={revealTarget}
               />
             ) : (
@@ -299,7 +359,7 @@ export default function App() {
 
           <div className="reader">
             <div className="reader-toolbar">
-              <span>
+              <span ref={readerTitleRef} tabIndex={-1}>
                 <BookOpen size={16} />
                 {snapshot ? '正文预览' : '等待一份好故事'}
               </span>
@@ -327,15 +387,6 @@ export default function App() {
                     </button>
                     <span className="tool-divider" />
                     <button
-                      className="merge-button"
-                      disabled={!emptyCount || !!busy || dirty}
-                      onClick={() => deleteEmptySections(true)}
-                      title="删除所有没有直属正文的标题，保留子章节；可撤销"
-                    >
-                      <Trash2 size={14} />
-                      清理空章节{emptyCount > 0 && `（${emptyCount}）`}
-                    </button>
-                    <button
                       className="icon-button"
                       title="撤销纠错（⌘/Ctrl Z）"
                       aria-label="撤销纠错"
@@ -352,6 +403,15 @@ export default function App() {
                       onClick={redo}
                     >
                       <Redo2 size={17} />
+                    </button>
+                    <button
+                      className="merge-button"
+                      disabled={!emptyCount || !!busy || dirty}
+                      onClick={() => deleteEmptySections(true)}
+                      title="删除所有没有直属正文的标题，保留子章节；可撤销"
+                    >
+                      <Trash2 size={14} />
+                      清理空章节{emptyCount > 0 && `（${emptyCount}）`}
                     </button>
                   </>
                 )}
@@ -435,7 +495,7 @@ export default function App() {
                   <button
                     className="text-button"
                     disabled={selectedIndex <= 0}
-                    onClick={() => setSelectedId(snapshot.sections[selectedIndex - 1].id)}
+                    onClick={() => openReader(snapshot.sections[selectedIndex - 1].id)}
                   >
                     <ArrowLeft size={14} />
                     上一节
@@ -447,7 +507,7 @@ export default function App() {
                   <button
                     className="text-button"
                     disabled={selectedIndex >= snapshot.sections.length - 1}
-                    onClick={() => setSelectedId(snapshot.sections[selectedIndex + 1].id)}
+                    onClick={() => openReader(snapshot.sections[selectedIndex + 1].id)}
                   >
                     下一节
                     <ArrowRight size={14} />
@@ -556,7 +616,7 @@ export default function App() {
           onCancel={cancel}
           onClose={() => setDialog(null)}
           onNavigate={(id) => {
-            setSelectedId(id);
+            openReader(id);
             setTab('outline');
             setRevealTarget((previous) => ({ id, token: (previous?.token ?? 0) + 1 }));
             setDialog(null);

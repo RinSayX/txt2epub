@@ -9,7 +9,7 @@ interface Props {
   revealTarget?: { id: string; token: number } | null;
 }
 
-const ROW_HEIGHT = 43;
+const ROW_HEIGHT = 44;
 
 export default function OutlineList({ sections, selectedId, onSelect, revealTarget }: Props) {
   const [query, setQuery] = useState('');

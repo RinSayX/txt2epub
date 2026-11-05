@@ -71,7 +71,6 @@ export default function ExportDialog({
             required
             disabled={generating}
             onChange={(event) => setTitle(event.target.value)}
-            autoFocus
           />
         </label>
         <label className="export-cleanup">

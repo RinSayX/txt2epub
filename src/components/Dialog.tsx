@@ -42,7 +42,7 @@ export default function Dialog({
           <X size={20} />
         </button>
       </div>
-      {children}
+      <div className="dialog-content">{children}</div>
     </dialog>
   );
 }

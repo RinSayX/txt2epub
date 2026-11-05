@@ -181,6 +181,9 @@
 .workspace.has-document {
   height: clamp(560px, calc(100vh - 390px), 850px);
 }
+.mobile-workspace-nav {
+  display: none;
+}
 .sidebar {
   display: flex;
   flex-direction: column;
