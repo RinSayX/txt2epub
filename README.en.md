@@ -4,6 +4,8 @@
 
 Shiye is a browser-based tool for organizing novels and converting between TXT and EPUB. It exports EPUB3 with nested contents and extracts UTF-8 text from unencrypted EPUB2 and EPUB3 books. All conversion happens on your device.
 
+[Use Shiye online](https://rinsay.com) · [Open the English interface](https://rinsay.com/?lang=en)
+
 ## Get started
 
 Select **EN** in the header or add `?lang=en` to the page URL. The browser remembers your choice. Interface language and the book language in EPUB metadata are separate settings.
