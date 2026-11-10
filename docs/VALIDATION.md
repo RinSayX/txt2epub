@@ -1,6 +1,6 @@
 # 验证与验收
 
-[项目首页](../README.md) · [项目结构](STRUCTURE.md) · [技术设计](TECHNICAL_DESIGN.md)
+[项目首页](../README.md) · [项目结构](STRUCTURE.md) · [技术设计](TECHNICAL_DESIGN.md) · [English](en/VALIDATION.md)
 
 ## 本轮复验
 

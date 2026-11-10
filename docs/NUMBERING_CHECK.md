@@ -1,6 +1,6 @@
 # 章节编号检查
 
-[项目首页](../README.md) · [TXT 转 EPUB](TXT_TO_EPUB.md) · [自定义正则](REGEX_RULES.md)
+[项目首页](../README.md) · [TXT 转 EPUB](TXT_TO_EPUB.md) · [自定义正则](REGEX_RULES.md) · [English](en/NUMBERING_CHECK.md)
 
 导入 TXT 后，在文件信息下方点击“查看编号检查”。检查针对当前识别与纠错后的有效目录，自动跟随导入、应用规则、合并、删除空章节、撤销和重做更新。EPUB 可先转换为 TXT，再导入工作台检查。
 

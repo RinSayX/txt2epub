@@ -1,3 +1,4 @@
+import { useText } from '../i18n/LanguageProvider';
 import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { DEFAULT_RULES } from '../core/rules';
@@ -33,6 +34,7 @@ export default function RulesPanel({
   hasDocument,
   contextKey,
 }: Props) {
+  const t = useText();
   const [keyword, setKeyword] = useState('');
   const [kind, setKind] = useState<'numbered' | 'unnumbered'>('numbered');
   const [message, setMessage] = useState('');
@@ -57,15 +59,15 @@ export default function RulesPanel({
   function add() {
     const value = keyword.trim();
     if (!value || value.length > 20 || /[\r\n]/.test(value)) {
-      setMessage('请输入 1–20 个字符的关键词。');
+      setMessage(t('请输入 1–20 个字符的关键词。', 'Enter a keyword of 1–20 characters.'));
       return;
     }
     if (rules.some((rule) => rule.keyword === value && rule.kind === kind)) {
-      setMessage('这个关键词已经存在。');
+      setMessage(t('这个关键词已经存在。', 'This keyword already exists.'));
       return;
     }
     if (rules.length >= 50) {
-      setMessage('最多支持 50 条规则。');
+      setMessage(t('最多支持 50 条规则。', 'You can use up to 50 rules.'));
       return;
     }
     onChange([
@@ -84,14 +86,19 @@ export default function RulesPanel({
   return (
     <div className="rules-panel">
       <div className="rules-intro">
-        <span className="eyebrow">让目录更懂你的故事</span>
-        <p>数字越小，层级越高。相同数字表示同级，调整后点击应用。</p>
+        <span className="eyebrow">{t('让目录更懂你的故事', 'Chapter recognition')}</span>
+        <p>
+          {t(
+            '数字越小，层级越高。相同数字表示同级，调整后点击应用。',
+            'Lower numbers indicate higher levels. Headings with the same number share a level. Apply the rules to update the contents.',
+          )}
+        </p>
       </div>
       <fieldset disabled={disabled} className="rules-fieldset">
         <div className="rule-table-heading">
-          <span>关键词 / 类型</span>
-          <span>层级</span>
-          <span>排序</span>
+          <span>{t('关键词 / 类型', 'Keyword / type')}</span>
+          <span>{t('层级', 'Level')}</span>
+          <span>{t('排序', 'Order')}</span>
         </div>
         <div className="rule-list">
           {sorted.map((rule) => (
@@ -101,15 +108,19 @@ export default function RulesPanel({
                   type="checkbox"
                   checked={rule.enabled}
                   onChange={(event) => update(rule.id, { enabled: event.target.checked })}
-                  aria-label={`启用 ${rule.keyword}`}
+                  aria-label={t(`启用 ${rule.keyword}`, `Enable ${rule.keyword}`)}
                 />
                 <span>
                   {rule.keyword}
-                  <small>{rule.kind === 'numbered' ? '第…' + rule.keyword : '无编号标题'}</small>
+                  <small>
+                    {rule.kind === 'numbered'
+                      ? '第…' + rule.keyword
+                      : t('无编号标题', 'Unnumbered heading')}
+                  </small>
                 </span>
               </label>
               <select
-                aria-label={`${rule.keyword} 的层级`}
+                aria-label={t(`${rule.keyword} 的层级`, `Level of ${rule.keyword}`)}
                 value={rule.level}
                 onChange={(event) => update(rule.id, { level: Number(event.target.value) })}
               >
@@ -122,8 +133,8 @@ export default function RulesPanel({
               <div className="rule-actions">
                 <button
                   className="icon-button"
-                  title={`提高 ${rule.keyword} 的层级`}
-                  aria-label={`提高 ${rule.keyword} 的层级`}
+                  title={t(`提高 ${rule.keyword} 的层级`, `Move ${rule.keyword} up`)}
+                  aria-label={t(`提高 ${rule.keyword} 的层级`, `Move ${rule.keyword} up`)}
                   disabled={rule.level === Math.min(...rules.map((item) => item.level))}
                   onClick={() => move(rule, -1)}
                 >
@@ -131,8 +142,8 @@ export default function RulesPanel({
                 </button>
                 <button
                   className="icon-button"
-                  title={`降低 ${rule.keyword} 的层级`}
-                  aria-label={`降低 ${rule.keyword} 的层级`}
+                  title={t(`降低 ${rule.keyword} 的层级`, `Move ${rule.keyword} down`)}
+                  aria-label={t(`降低 ${rule.keyword} 的层级`, `Move ${rule.keyword} down`)}
                   disabled={rule.level === Math.max(...rules.map((item) => item.level))}
                   onClick={() => move(rule, 1)}
                 >
@@ -140,8 +151,8 @@ export default function RulesPanel({
                 </button>
                 <button
                   className="icon-button danger"
-                  title={`删除 ${rule.keyword}`}
-                  aria-label={`删除 ${rule.keyword}`}
+                  title={t(`删除 ${rule.keyword}`, `Delete ${rule.keyword}`)}
+                  aria-label={t(`删除 ${rule.keyword}`, `Delete ${rule.keyword}`)}
                   onClick={() => onChange(rules.filter((item) => item.id !== rule.id))}
                 >
                   <Trash2 size={12} />
@@ -151,11 +162,11 @@ export default function RulesPanel({
           ))}
         </div>
         <div className="add-rule">
-          <label htmlFor="new-keyword">添加识别关键词</label>
+          <label htmlFor="new-keyword">{t('添加识别关键词', 'Add a heading keyword')}</label>
           <div className="new-rule-input">
             <input
               id="new-keyword"
-              placeholder="例如：部、篇、终章"
+              placeholder={t('例如：部、篇、终章', 'e.g. Prologue, Epilogue')}
               value={keyword}
               maxLength={20}
               onChange={(event) => setKeyword(event.target.value)}
@@ -166,17 +177,28 @@ export default function RulesPanel({
                 }
               }}
             />
-            <button className="icon-button" aria-label="添加规则" onClick={add}>
+            <button
+              className="icon-button"
+              aria-label={t('添加规则', 'Add keyword rule')}
+              onClick={add}
+            >
               <Plus size={17} />
             </button>
           </div>
           <select
-            aria-label="新规则类型"
+            aria-label={t('新规则类型', 'New rule type')}
             value={kind}
             onChange={(event) => setKind(event.target.value as typeof kind)}
           >
-            <option value="numbered">编号标题：第…关键词</option>
-            <option value="unnumbered">无编号标题：关键词 / 关键词：副标题</option>
+            <option value="numbered">
+              {t('编号标题：第…关键词', 'Numbered: 第 + number + keyword')}
+            </option>
+            <option value="unnumbered">
+              {t(
+                '无编号标题：关键词 / 关键词：副标题',
+                'Unnumbered: keyword or keyword with subtitle',
+              )}
+            </option>
           </select>
           {message && (
             <p className="field-error" role="alert">
@@ -193,7 +215,7 @@ export default function RulesPanel({
           onTest={onTestRegex}
         />
         <label className="max-length">
-          标题长度上限
+          {t('标题长度上限', 'Maximum title length')}
           <span>
             <input
               type="number"
@@ -202,7 +224,7 @@ export default function RulesPanel({
               value={Number.isNaN(maxLength) ? '' : maxLength}
               onChange={(event) => setMaxLength(event.target.valueAsNumber)}
             />{' '}
-            字
+            {t('字', 'characters')}
           </span>
         </label>
         <div className="rule-bottom">
@@ -215,9 +237,11 @@ export default function RulesPanel({
             }}
           >
             <RotateCcw size={13} />
-            恢复默认
+            {t('恢复默认', 'Restore defaults')}
           </button>
-          <span>{dirty ? '有未应用的修改' : '规则已应用'}</span>
+          <span>
+            {dirty ? t('有未应用的修改', 'Unapplied changes') : t('规则已应用', 'Rules applied')}
+          </span>
         </div>
       </fieldset>
       <button
@@ -225,9 +249,14 @@ export default function RulesPanel({
         disabled={disabled || !dirty}
         onClick={onApply}
       >
-        应用识别规则
+        {t('应用识别规则', 'Apply rules')}
       </button>
-      <p className="rule-note">重新识别会保留当前文件中已取消的标题。</p>
+      <p className="rule-note">
+        {t(
+          '重新识别会保留当前文件中已取消的标题。',
+          'Rebuilding the contents preserves edits to headings in this file.',
+        )}
+      </p>
     </div>
   );
 }

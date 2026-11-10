@@ -117,6 +117,9 @@
   .topbar-right {
     gap: 6px;
   }
+  .topbar .privacy {
+    display: none;
+  }
   .help-button {
     justify-content: center;
     width: 44px;

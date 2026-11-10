@@ -1,3 +1,5 @@
+import { LocalizedError } from '../../i18n/locale';
+
 export const escapeXml = (text: string) =>
   text.replace(
     /[&<>"']/g,
@@ -34,8 +36,18 @@ export function assertXmlCharacters(
       (code >= 0x10000 && code <= 0x10ffff) ||
       [9, 10, 13].includes(code)
     )) {
-      throw new Error(
-        `${label}第 ${line} 行（字符偏移 ${offset}）包含 XML 不支持的字符 U+${code.toString(16).toUpperCase().padStart(4, '0')}。${label === '正文' && isInvalidXmlControl(char) ? '可在导出窗口勾选“清理不兼容的隐藏控制字符”后重试，或修正源文件。' : '请修正该字符后重试。'}原文未被自动修改。`,
+      const codePoint = code.toString(16).toUpperCase().padStart(4, '0');
+      const canClean = label === '正文' && isInvalidXmlControl(char);
+      const fieldNames: Record<string, string> = {
+        书名: 'Book title',
+        作者: 'Author',
+        正文: 'Body text',
+        章节标题: 'Chapter title',
+      };
+      const field = fieldNames[label] ?? label;
+      throw new LocalizedError(
+        `${label}第 ${line} 行（字符偏移 ${offset}）包含 XML 不支持的字符 U+${codePoint}。${canClean ? '可在导出窗口勾选“清理不兼容的隐藏控制字符”后重试，或修正源文件。' : '请修正该字符后重试。'}原文未被自动修改。`,
+        `${field}, line ${line} (character offset ${offset}), contains an XML-incompatible character U+${codePoint}. ${canClean ? 'Enable “Remove unsupported control characters” in the export dialog, or correct the source file.' : 'Correct this character and try again.'} The source was not changed.`,
       );
     }
     offset += char.length;

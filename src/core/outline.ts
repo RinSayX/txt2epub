@@ -1,3 +1,4 @@
+import { LocalizedError } from '../i18n/locale';
 import type { Checkpoint, HeadingRule, Outline, RegexHeadingRule, Section } from './types';
 import { chapterContentEnd, previewParagraphs } from './paragraphs';
 import { compileRegexRules } from './regex';
@@ -8,9 +9,13 @@ const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$
 
 export function validateRules(rules: HeadingRule[], maxTitleLength: number): void {
   if (!Number.isInteger(maxTitleLength) || maxTitleLength < 4 || maxTitleLength > 500) {
-    throw new Error('标题长度上限需为 4–500 之间的整数。');
+    throw new LocalizedError(
+      '标题长度上限需为 4–500 之间的整数。',
+      'Maximum title length must be an integer from 4 to 500.',
+    );
   }
-  if (rules.length > 50) throw new Error('最多支持 50 条识别规则。');
+  if (rules.length > 50)
+    throw new LocalizedError('最多支持 50 条识别规则。', 'You can use up to 50 recognition rules.');
   const seen = new Set<string>();
   for (const rule of rules) {
     if (
@@ -19,13 +24,24 @@ export function validateRules(rules: HeadingRule[], maxTitleLength: number): voi
       rule.keyword.length > 20 ||
       /[\r\n]/.test(rule.keyword)
     ) {
-      throw new Error('关键词需要为 1–20 个字符，且不能包含换行或首尾空格。');
+      throw new LocalizedError(
+        '关键词需要为 1–20 个字符，且不能包含换行或首尾空格。',
+        'Keywords must be 1–20 characters with no line breaks or leading or trailing spaces.',
+      );
     }
     if (!Number.isInteger(rule.level) || rule.level < 1 || rule.level > 10)
-      throw new Error('层级需为 1–10 之间的整数。');
-    if (!['numbered', 'unnumbered'].includes(rule.kind)) throw new Error('未知的规则类型。');
+      throw new LocalizedError(
+        '层级需为 1–10 之间的整数。',
+        'Heading level must be an integer from 1 to 10.',
+      );
+    if (!['numbered', 'unnumbered'].includes(rule.kind))
+      throw new LocalizedError('未知的规则类型。', 'Unknown rule type.');
     const key = `${rule.kind}:${rule.keyword}`;
-    if (seen.has(key)) throw new Error(`关键词“${rule.keyword}”重复，请删除重复规则。`);
+    if (seen.has(key))
+      throw new LocalizedError(
+        `关键词“${rule.keyword}”重复，请删除重复规则。`,
+        `Duplicate keyword “${rule.keyword}”. Remove the duplicate rule.`,
+      );
     seen.add(key);
   }
 }
@@ -85,8 +101,9 @@ export async function buildOutline(
           result.groups && Object.hasOwn(result.groups, 'title') ? result.groups.title : trimmed
         )?.trim();
         if (!title)
-          throw new Error(
+          throw new LocalizedError(
             `正则规则“${rule.name}”在原文第 ${lineIndex + 1} 行提取出空标题。请调整 title 捕获组。`,
+            `Regex rule “${rule.name}” extracted an empty title on source line ${lineIndex + 1}. Adjust the title capture group.`,
           );
         match = {
           rule,

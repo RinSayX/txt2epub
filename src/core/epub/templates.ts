@@ -85,16 +85,17 @@ export function renderContainer(): string {
 }
 
 export function renderNavigationDocument(language: string, nav: string): string {
+  const title = /^en(?:-|$)/i.test(language) ? 'Contents' : '目录';
   return [
     xmlHeader,
     '<!DOCTYPE html>',
     `<html xmlns="${XHTML}" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${escapeXml(language)}" lang="${escapeXml(language)}">`,
     '  <head>',
-    '    <title>目录</title>',
+    `    <title>${title}</title>`,
     '  </head>',
     '  <body>',
     '    <nav epub:type="toc" id="toc">',
-    '      <h1>目录</h1>',
+    `      <h1>${title}</h1>`,
     '      <ol>',
     nav,
     '      </ol>',
@@ -165,7 +166,7 @@ export function renderPackage(
     ...(hasCover
       ? [
           '  <guide>',
-          '    <reference type="cover" title="封面" href="cover.xhtml" />',
+          `    <reference type="cover" title="${/^en(?:-|$)/i.test(metadata.language) ? 'Cover' : '封面'}" href="cover.xhtml" />`,
           '  </guide>',
         ]
       : []),

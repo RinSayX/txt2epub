@@ -1,3 +1,4 @@
+import { LocalizedError } from '../i18n/locale';
 import type { Encoding } from './types';
 
 const COMMON_CHINESE = new Set(
@@ -17,7 +18,11 @@ function quality(text: string): number {
 }
 
 export function decodeText(bytes: Uint8Array, requested: Encoding = 'auto') {
-  if (!bytes.length) throw new Error('这个文件是空的，请选择包含正文的 TXT 文件。');
+  if (!bytes.length)
+    throw new LocalizedError(
+      '这个文件是空的，请选择包含正文的 TXT 文件。',
+      'This file is empty. Choose a TXT file with text.',
+    );
   let encoding: string = requested;
   let uncertain = false;
   if (requested === 'auto') {
@@ -39,7 +44,10 @@ export function decodeText(bytes: Uint8Array, requested: Encoding = 'auto') {
           })
           .sort((a, b) => b.score - a.score);
         if (!candidates.length)
-          throw new Error('无法确定文件编码，请在编码选项中手动选择后重新导入。');
+          throw new LocalizedError(
+            '无法确定文件编码，请在编码选项中手动选择后重新导入。',
+            'Could not detect the encoding. Select it manually and reimport the file.',
+          );
         encoding = candidates[0].encoding;
         uncertain = true;
       }
@@ -47,12 +55,19 @@ export function decodeText(bytes: Uint8Array, requested: Encoding = 'auto') {
   }
   try {
     const decoded = new TextDecoder(encoding, { fatal: true }).decode(bytes);
-    if (!decoded.trim()) throw new Error('文件只有空白字符，请选择包含正文的文件。');
+    if (!decoded.trim())
+      throw new LocalizedError(
+        '文件只有空白字符，请选择包含正文的文件。',
+        'The file contains only whitespace. Choose a file with text.',
+      );
     // This view changes line endings only. Match-time normalization never mutates it.
     return { text: decoded.replace(/\r\n?/g, '\n'), encoding, uncertain };
   } catch (error) {
     if (error instanceof TypeError)
-      throw new Error(`无法以 ${encoding.toUpperCase()} 完整解码，请切换编码后重试。`);
+      throw new LocalizedError(
+        `无法以 ${encoding.toUpperCase()} 完整解码，请切换编码后重试。`,
+        `Could not decode the entire file as ${encoding.toUpperCase()}. Try another encoding.`,
+      );
     throw error;
   }
 }

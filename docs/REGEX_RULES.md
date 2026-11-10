@@ -1,6 +1,6 @@
 # 自定义正则识别规则使用指南
 
-[项目首页](../README.md) · [TXT 转 EPUB](TXT_TO_EPUB.md) · [章节编号检查](NUMBERING_CHECK.md)
+[项目首页](../README.md) · [TXT 转 EPUB](TXT_TO_EPUB.md) · [章节编号检查](NUMBERING_CHECK.md) · [English](en/REGEX_RULES.md)
 
 自定义正则适合识别 `233.第233章 比试`、英文标题等特殊章节格式。它只决定哪些原文行是标题、标题属于哪一层，以及显示什么标题；源 TXT 不会被改写。
 

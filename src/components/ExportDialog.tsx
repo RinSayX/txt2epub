@@ -1,3 +1,5 @@
+import { describeError, localize, type Copy } from '../i18n/locale';
+import { useLanguage, useText } from '../i18n/LanguageProvider';
 import { ArrowDownToLine, BookOpen } from 'lucide-react';
 import Dialog from './Dialog';
 import { useEffect, useRef, useState } from 'react';
@@ -30,10 +32,12 @@ export default function ExportDialog({
   onClose,
   onExport,
 }: Props) {
+  const t = useText();
+  const { locale } = useLanguage();
   const [cleanInvalidControls, setCleanInvalidControls] = useState(false);
   const [autoCover, setAutoCover] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<Copy | ''>('');
   const active = useRef(true);
   useEffect(() => {
     active.current = true;
@@ -49,14 +53,25 @@ export default function ExportDialog({
       const cover = autoCover ? await createCoverPng(title) : undefined;
       if (active.current) await onExport(cleanInvalidControls, cover);
     } catch (caught) {
-      if (active.current) setError((caught as Error).message);
+      if (active.current)
+        setError(
+          describeError(caught, [
+            '封面生成失败，请重试。',
+            'Could not generate the cover. Try again.',
+          ]),
+        );
     } finally {
       if (active.current) setGenerating(false);
     }
   }
   return (
-    <Dialog title="为故事，装订成书" onClose={onClose}>
-      <p className="dialog-intro">检查书籍信息，导出带有多级目录的 EPUB3 文件。</p>
+    <Dialog title={t('为故事，装订成书', 'Export EPUB')} onClose={onClose}>
+      <p className="dialog-intro">
+        {t(
+          '检查书籍信息，导出带有多级目录的 EPUB3 文件。',
+          'Review book details and export an EPUB3 with nested contents.',
+        )}
+      </p>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -64,7 +79,8 @@ export default function ExportDialog({
         }}
       >
         <label className="form-field">
-          书名 <span>必填</span>
+          {t('书名', 'Book title ')}
+          <span>{t('必填', 'Required')}</span>
           <input
             value={title}
             maxLength={200}
@@ -81,32 +97,36 @@ export default function ExportDialog({
             onChange={(event) => setAutoCover(event.target.checked)}
           />
           <span>
-            自动生成封面
+            {t('自动生成封面', 'Generate cover')}
             <small>
-              书名必填。600 × 800 像素 PNG，白底黑字，书名居中偏上，过长自动换行，不额外添加书名号。
+              {t(
+                '书名必填。600 × 800 像素 PNG，白底黑字，书名居中偏上，过长自动换行，不额外添加书名号。',
+                'Creates a 600 × 800 PNG with the book title in black on white. The title is centered toward the top and wraps as needed.',
+              )}
             </small>
           </span>
         </label>
         {autoCover && <CoverPreview title={title} />}
         <label className="form-field">
-          作者 <span>选填</span>
+          {t('作者', 'Author ')}
+          <span>{t('选填', 'Optional')}</span>
           <input
             value={author}
             maxLength={200}
             disabled={generating}
             onChange={(event) => setAuthor(event.target.value)}
-            placeholder="填写作者姓名"
+            placeholder={t('填写作者姓名', 'Enter author name')}
           />
         </label>
         <label className="form-field">
-          书籍语言
+          {t('书籍语言', 'Book language')}
           <select
             value={language}
             disabled={generating}
             onChange={(event) => setLanguage(event.target.value)}
           >
-            <option value="zh-CN">简体中文</option>
-            <option value="zh-Hant">繁體中文</option>
+            <option value="zh-CN">{t('简体中文', 'Simplified Chinese')}</option>
+            <option value="zh-Hant">{t('繁體中文', 'Traditional Chinese')}</option>
             <option value="en">English</option>
           </select>
         </label>
@@ -118,8 +138,13 @@ export default function ExportDialog({
             onChange={(event) => setRemoveBlankLines(event.target.checked)}
           />
           <span>
-            清理段间空行
-            <small>自动略过空白行，保留每个正文段落。与预览同步，源 TXT 不变。</small>
+            {t('清理段间空行', 'Remove blank lines')}
+            <small>
+              {t(
+                '自动略过空白行，保留每个正文段落。与预览同步，源 TXT 不变。',
+                'Skips blank lines in the preview and EPUB while keeping paragraphs separate. Your TXT file stays intact.',
+              )}
+            </small>
           </span>
         </label>
         <label className="export-cleanup">
@@ -130,29 +155,48 @@ export default function ExportDialog({
             onChange={(event) => setCleanInvalidControls(event.target.checked)}
           />
           <span>
-            清理不兼容的隐藏控制字符
+            {t('清理不兼容的隐藏控制字符', 'Remove unsupported control characters')}
             <small>
-              遇到 U+001A 等字符报错时可勾选。仅清理导出内容，源 TXT
-              和预览不变；保留正常文字、换行与制表符，完成后显示清理数量。
+              {t(
+                '遇到 U+001A 等字符报错时可勾选。仅清理导出内容，源 TXT 和预览不变；保留正常文字、换行与制表符，完成后显示清理数量。',
+                'Use this if export reports a character such as U+001A. This applies only to the export and preserves ordinary text, line breaks and tabs. The app reports how many characters were removed.',
+              )}
             </small>
           </span>
         </label>
         <div className="export-summary">
           <BookOpen size={20} />
           <div>
-            <strong>EPUB3 电子书</strong>
-            <p>{sectionCount} 节内容 · 多级目录 · 附带旧式 NCX 导航</p>
+            <strong>{t('EPUB3 电子书', 'EPUB3 ebook')}</strong>
+            <p>
+              {sectionCount}
+              {t(
+                '节内容 · 多级目录 · 附带旧式 NCX 导航',
+                ' sections · Nested contents · Legacy NCX',
+              )}
+            </p>
           </div>
           <span>.epub</span>
         </div>
         <p className="export-note">
-          自动去除段首空白和章末空行。
-          {removeBlankLines ? '已开启段间空行清理，正文每段仍独立。' : '保留段落之间的空行。'}
-          导出不附带排版样式，字体、行距及段间距由阅读器决定。旧阅读器兼容性取决于具体软件或设备。
+          {t(
+            '自动去除段首空白和章末空行。',
+            'Leading indentation and trailing blank lines are removed from chapters. ',
+          )}
+          {removeBlankLines
+            ? t(
+                '已开启段间空行清理，正文每段仍独立。',
+                'Blank lines between paragraphs will be removed. ',
+              )
+            : t('保留段落之间的空行。', 'Blank lines between paragraphs will be kept. ')}
+          {t(
+            '导出不附带排版样式，字体、行距及段间距由阅读器决定。旧阅读器兼容性取决于具体软件或设备。',
+            'Your reader controls the typography and spacing. Compatibility varies with older readers.',
+          )}
         </p>
         {error && (
           <p className="export-note" role="alert">
-            {error}
+            {localize(error, locale)}
           </p>
         )}
         <button
@@ -161,7 +205,9 @@ export default function ExportDialog({
           disabled={!title.trim() || generating}
         >
           <ArrowDownToLine size={17} />
-          {generating ? '正在生成…' : '生成并下载 EPUB'}
+          {generating
+            ? t('正在生成…', 'Generating…')
+            : t('生成并下载 EPUB', 'Generate and download EPUB')}
         </button>
       </form>
     </Dialog>

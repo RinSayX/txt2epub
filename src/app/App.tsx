@@ -1,3 +1,5 @@
+import { progressText } from '../i18n/locale';
+import { useLanguage, useText } from '../i18n/LanguageProvider';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import {
   AlertCircle,
@@ -39,6 +41,8 @@ import { useDocumentSession } from './useDocumentSession';
 const MOBILE_WORKSPACE = '(max-width: 760px)';
 
 export default function App() {
+  const t = useText();
+  const { locale, setLocale } = useLanguage();
   const {
     rules,
     setRules,
@@ -146,35 +150,52 @@ export default function App() {
         <a
           href="#"
           className="brand"
-          aria-label="拾页首页"
+          aria-label={t('拾页首页', 'Shiye home')}
           onClick={(event) => event.preventDefault()}
         >
           <span className="brand-icon">
             <BookOpen size={24} strokeWidth={1.6} />
           </span>
           <span>
-            拾页<span className="brand-en">SHIYE</span>
+            {t('拾页', 'Shiye')}
+            {locale === 'zh-CN' && <span className="brand-en">SHIYE</span>}
           </span>
         </a>
         <div className="topbar-divider" />
-        <span className="topbar-description">小说格式转换工作台</span>
+        <span className="topbar-description">
+          {t('小说格式转换工作台', 'Ebook conversion workspace')}
+        </span>
         <div className="topbar-right">
+          <button
+            className="language-switch"
+            onClick={() => setLocale(locale === 'en' ? 'zh-CN' : 'en')}
+            aria-label={t('切换至英文界面', 'Switch interface to Chinese')}
+          >
+            <span lang={locale === 'en' ? 'zh-CN' : 'en'}>{locale === 'en' ? '中文' : 'EN'}</span>
+          </button>
           <span className="privacy">
             <ShieldCheck size={15} />
-            文件仅在本地处理
+            {t('文件仅在本地处理', 'Files stay on your device')}
           </span>
           <a
             className="github-link"
             href="https://github.com/RinSayX/txt2epub"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="在 GitHub 上为拾页点 Star（新标签页）"
+            aria-label={t(
+              '在 GitHub 上为拾页点 Star（新标签页）',
+              'Star Shiye on GitHub (opens in a new tab)',
+            )}
           >
             <Github size={20} aria-hidden="true" />
           </a>
-          <button className="help-button" aria-label="使用帮助" onClick={() => setDialog('help')}>
+          <button
+            className="help-button"
+            aria-label={t('使用帮助', 'Help')}
+            onClick={() => setDialog('help')}
+          >
             <HelpCircle size={17} />
-            <span>使用帮助</span>
+            <span>{t('使用帮助', 'Help')}</span>
           </button>
         </div>
       </header>
@@ -184,13 +205,23 @@ export default function App() {
           <div>
             <div className="eyebrow">
               <span className="tiny-dot" />
-              TXT ↔ EPUB · 让文字自由流转
+              {t('TXT ↔ EPUB · 让文字自由流转', 'TXT ↔ EPUB · Convert locally')}
             </div>
-            <h1>{snapshot ? '故事已就绪，整理每一页。' : '让故事，成册。'}</h1>
+            <h1>
+              {snapshot
+                ? t('故事已就绪，整理每一页。', 'Your book is ready to organize.')
+                : t('让故事，成册。', 'Turn your text into an ebook.')}
+            </h1>
             <p>
               {snapshot
-                ? '检查章节脉络，保留原文，然后带走一本属于你的电子书。'
-                : '从一份纯文本，到一本有序的电子书。每一章，都恰到好处。'}
+                ? t(
+                    '检查章节脉络，保留原文，然后带走一本属于你的电子书。',
+                    'Review the chapters, then export your ebook.',
+                  )
+                : t(
+                    '从一份纯文本，到一本有序的电子书。每一章，都恰到好处。',
+                    'Organize a plain text novel and export it as an EPUB.',
+                  )}
             </p>
           </div>
           <div className="page-actions">
@@ -200,7 +231,7 @@ export default function App() {
               onClick={() => setDialog('epub-to-txt')}
             >
               <ArrowLeftRight size={16} />
-              EPUB 转 TXT
+              {t('EPUB 转 TXT', 'EPUB to TXT')}
             </button>
             <button
               className="button secondary"
@@ -208,19 +239,23 @@ export default function App() {
               onClick={() => fileInput.current?.click()}
             >
               <Upload size={16} />
-              {snapshot ? '更换 TXT' : '导入 TXT'}
+              {snapshot ? t('更换 TXT', 'Replace TXT') : t('导入 TXT', 'Import TXT')}
             </button>
             <button
               className="button primary"
               disabled={!snapshot || !!busy || dirty}
-              title={dirty ? '请先应用修改后的识别规则' : '导出 EPUB3 电子书'}
+              title={
+                dirty
+                  ? t('请先应用修改后的识别规则', 'Apply your rule changes first')
+                  : t('导出 EPUB3 电子书', 'Export an EPUB3 ebook')
+              }
               onClick={() => {
                 setError('');
                 setDialog('export');
               }}
             >
               <ArrowDownToLine size={17} />
-              导出 EPUB
+              {t('导出 EPUB', 'Export EPUB')}
               <ArrowRight size={15} />
             </button>
           </div>
@@ -230,7 +265,7 @@ export default function App() {
           type="file"
           accept=".txt,text/plain"
           ref={fileInput}
-          aria-label="选择 TXT 小说"
+          aria-label={t('选择 TXT 小说', 'Select a TXT novel')}
           onChange={onFiles}
           disabled={!!busy}
         />
@@ -239,7 +274,11 @@ export default function App() {
           <div className="notice error" role="alert">
             <AlertCircle size={17} />
             <span>{error}</span>
-            <button className="icon-button" aria-label="关闭错误提示" onClick={() => setError('')}>
+            <button
+              className="icon-button"
+              aria-label={t('关闭错误提示', 'Dismiss error')}
+              onClick={() => setError('')}
+            >
               <X size={16} />
             </button>
           </div>
@@ -259,15 +298,18 @@ export default function App() {
           <div className="numbering-summary">
             <span>
               {continuity
-                ? `编号检查：${continuity.issues.filter((issue) => !confirmedNumbering.has(issue.id)).length} 个待确认问题 · ${continuity.unparsed.length} 个未解析标题`
-                : '编号检查尚未完成'}
+                ? t(
+                    `编号检查：${continuity.issues.filter((issue) => !confirmedNumbering.has(issue.id)).length} 个待确认问题 · ${continuity.unparsed.length} 个未解析标题`,
+                    `Numbering: ${continuity.issues.filter((issue) => !confirmedNumbering.has(issue.id)).length} to review · ${continuity.unparsed.length} unparsed`,
+                  )
+                : t('编号检查尚未完成', 'Numbering check pending')}
             </span>
             <button
               className="text-button"
               disabled={!!busy && busy.label !== '检查章节编号'}
               onClick={() => setDialog('numbering')}
             >
-              查看编号检查
+              {t('查看编号检查', 'View numbering check')}
             </button>
           </div>
         )}
@@ -275,17 +317,26 @@ export default function App() {
           <div className="notice info">
             <AlertCircle size={16} />
             <span>
-              当前编码为自动推测的 {snapshot.encoding.toUpperCase()}
-              。请检查正文是否乱码，可在上方切换编码。
+              {t('当前编码为自动推测的', 'Detected encoding: ')}
+              {snapshot.encoding.toUpperCase()}
+              {t(
+                '。请检查正文是否乱码，可在上方切换编码。',
+                '. If the text looks garbled, try another encoding above.',
+              )}
             </span>
           </div>
         )}
         {dirty && snapshot && (
           <div className="notice info">
             <Settings2 size={16} />
-            <span>识别规则尚未应用，当前预览仍使用原规则。</span>
+            <span>
+              {t(
+                '识别规则尚未应用，当前预览仍使用原规则。',
+                'The preview still uses the previous rules. Apply your changes to update it.',
+              )}
+            </span>
             <button className="text-button" disabled={!!busy} onClick={applyRules}>
-              立即应用
+              {t('立即应用', 'Apply now')}
               <ArrowRight size={13} />
             </button>
           </div>
@@ -295,15 +346,19 @@ export default function App() {
           ref={workspaceRef}
           className={`workspace ${snapshot ? 'has-document' : ''}`}
           data-mobile-panel={mobilePanel}
-          aria-label="小说整理工作台"
+          aria-label={t('小说整理工作台', 'Novel workspace')}
         >
-          <div className="mobile-workspace-nav" role="group" aria-label="工作台视图">
+          <div
+            className="mobile-workspace-nav"
+            role="group"
+            aria-label={t('工作台视图', 'Workspace views')}
+          >
             <button
               aria-pressed={snapshot ? mobilePanel === 'outline' : mobilePanel === 'reader'}
               onClick={() => openMobileSidebar('outline')}
             >
               {snapshot ? <ListTree size={17} /> : <Upload size={17} />}
-              {snapshot ? '章节目录' : '导入文件'}
+              {snapshot ? t('章节目录', 'Contents') : t('导入文件', 'Import file')}
             </button>
             {snapshot && (
               <button
@@ -311,7 +366,7 @@ export default function App() {
                 onClick={() => openReader(selectedId, false)}
               >
                 <BookOpen size={17} />
-                正文预览
+                {t('正文预览', 'Preview')}
               </button>
             )}
             <button
@@ -319,7 +374,8 @@ export default function App() {
               onClick={() => openMobileSidebar('rules')}
             >
               <Settings2 size={17} />
-              识别规则{dirty && <span className="dirty-dot" />}
+              {t('识别规则', 'Rules')}
+              {dirty && <span className="dirty-dot" />}
             </button>
           </div>
           <aside className="sidebar">
@@ -329,11 +385,13 @@ export default function App() {
                 onClick={() => setTab('outline')}
               >
                 <ListTree size={16} />
-                章节目录{snapshot && <span>{snapshot.sections.length}</span>}
+                {t('章节目录', 'Contents')}
+                {snapshot && <span>{snapshot.sections.length}</span>}
               </button>
               <button className={tab === 'rules' ? 'active' : ''} onClick={() => setTab('rules')}>
                 <Settings2 size={15} />
-                识别规则{dirty && <span className="dirty-dot" />}
+                {t('识别规则', 'Rules')}
+                {dirty && <span className="dirty-dot" />}
               </button>
             </div>
             {tab === 'outline' ? (
@@ -371,15 +429,15 @@ export default function App() {
             <div className="reader-toolbar">
               <span ref={readerTitleRef} tabIndex={-1}>
                 <BookOpen size={16} />
-                {snapshot ? '正文预览' : '等待一份好故事'}
+                {snapshot ? t('正文预览', 'Preview') : t('等待一份好故事', 'Waiting for a novel')}
               </span>
               <div className="reader-tools">
                 {snapshot && (
                   <>
                     <button
                       className="icon-button"
-                      title="缩小字号"
-                      aria-label="缩小字号"
+                      title={t('缩小字号', 'Decrease font size')}
+                      aria-label={t('缩小字号', 'Decrease font size')}
                       disabled={fontSize <= 14}
                       onClick={() => setFontSize((size) => size - 2)}
                     >
@@ -388,8 +446,8 @@ export default function App() {
                     <span className="font-size">{fontSize}</span>
                     <button
                       className="icon-button"
-                      title="放大字号"
-                      aria-label="放大字号"
+                      title={t('放大字号', 'Increase font size')}
+                      aria-label={t('放大字号', 'Increase font size')}
                       disabled={fontSize >= 26}
                       onClick={() => setFontSize((size) => size + 2)}
                     >
@@ -398,8 +456,8 @@ export default function App() {
                     <span className="tool-divider" />
                     <button
                       className="icon-button"
-                      title="撤销纠错（⌘/Ctrl Z）"
-                      aria-label="撤销纠错"
+                      title={t('撤销纠错（⌘/Ctrl Z）', 'Undo edit (⌘/Ctrl Z)')}
+                      aria-label={t('撤销纠错', 'Undo edit')}
                       disabled={!past.length || !!busy}
                       onClick={undo}
                     >
@@ -407,8 +465,8 @@ export default function App() {
                     </button>
                     <button
                       className="icon-button"
-                      title="重做纠错（⌘/Ctrl Shift Z）"
-                      aria-label="重做纠错"
+                      title={t('重做纠错（⌘/Ctrl Shift Z）', 'Redo edit (⌘/Ctrl Shift Z)')}
+                      aria-label={t('重做纠错', 'Redo edit')}
                       disabled={!future.length || !!busy}
                       onClick={redo}
                     >
@@ -418,19 +476,23 @@ export default function App() {
                       className="merge-button"
                       disabled={!emptyCount || !!busy || dirty}
                       onClick={() => deleteEmptySections(true)}
-                      title="删除所有没有直属正文的标题，保留子章节；可撤销"
+                      title={t(
+                        '删除所有没有直属正文的标题，保留子章节；可撤销',
+                        'Remove all headings with no body text. Subsections are kept. You can undo this.',
+                      )}
                     >
                       <Trash2 size={14} />
-                      清理空章节{emptyCount > 0 && `（${emptyCount}）`}
+                      {t('清理空章节', 'Remove empty sections')}
+                      {emptyCount > 0 && `（${emptyCount}）`}
                     </button>
                   </>
                 )}
                 <span className="preview-label">
                   {snapshot
                     ? removeBlankLines
-                      ? '已清理段首空白及正文空行'
-                      : '已清理段首和章末空白'
-                    : '你的文件，始终在你手中'}
+                      ? t('已清理段首空白及正文空行', 'Indentation and blank lines removed')
+                      : t('已清理段首和章末空白', 'Leading and trailing whitespace cleaned')
+                    : t('你的文件，始终在你手中', 'Your files stay on your device')}
                 </span>
               </div>
             </div>
@@ -451,29 +513,46 @@ export default function App() {
                       disabled={!!busy}
                       onChange={(event) => setRemoveBlankLines(event.target.checked)}
                     />
-                    清理段间空行
+                    {t('清理段间空行', 'Remove blank lines')}
                   </label>
-                  <span>自动应用于预览和导出，保留正常段落分隔</span>
+                  <span>
+                    {t(
+                      '自动应用于预览和导出，保留正常段落分隔',
+                      'Applies to preview and export. Paragraphs stay separate.',
+                    )}
+                  </span>
                 </div>
                 <div className="chapter-bar">
                   <div className="chapter-location">
                     <span>
                       {selected?.lineIndex === null
-                        ? '卷首内容'
-                        : `原文第 ${(selected?.lineIndex ?? 0) + 1} 行`}
+                        ? t('卷首内容', 'Front matter')
+                        : t(
+                            `原文第 ${(selected?.lineIndex ?? 0) + 1} 行`,
+                            `Source line ${(selected?.lineIndex ?? 0) + 1}`,
+                          )}
                     </span>
                     <ChevronRight size={13} />
-                    <strong>{snapshot.headingCount === 0 ? title : selected?.title}</strong>
+                    <strong>
+                      {snapshot.headingCount === 0
+                        ? title
+                        : selected?.lineIndex === null
+                          ? t('简介', 'Introduction')
+                          : selected?.title}
+                    </strong>
                   </div>
                   <div className="chapter-actions">
                     <button
                       className="merge-button"
                       disabled={selected?.lineIndex == null || !selected.empty || !!busy || dirty}
                       onClick={() => deleteEmptySections()}
-                      title="删除当前空标题，保留子章节；可撤销"
+                      title={t(
+                        '删除当前空标题，保留子章节；可撤销',
+                        'Remove this empty heading. Subsections are kept. You can undo this.',
+                      )}
                     >
                       <Trash2 size={14} />
-                      删除空章节
+                      {t('删除空章节', 'Remove empty section')}
                     </button>
                     <button
                       className="merge-button"
@@ -482,10 +561,13 @@ export default function App() {
                         if (selected?.lineIndex != null)
                           void changeIgnored([...ignored, selected.lineIndex], 'merge');
                       }}
-                      title="取消此标题，标题行和正文并入前一节，保留子章节"
+                      title={t(
+                        '取消此标题，标题行和正文并入前一节，保留子章节',
+                        'Merge this heading and its text into the previous section. Subsections are kept.',
+                      )}
                     >
                       <Merge size={14} />
-                      并入上一节
+                      {t('并入上一节', 'Merge into previous')}
                     </button>
                   </div>
                 </div>
@@ -508,18 +590,20 @@ export default function App() {
                     onClick={() => openReader(snapshot.sections[selectedIndex - 1].id)}
                   >
                     <ArrowLeft size={14} />
-                    上一节
+                    {t('上一节', 'Previous')}
                   </button>
                   <span>
                     {selectedIndex + 1} / {snapshot.sections.length}
-                    {correctionCount > 0 && <em>已纠正 {correctionCount} 处</em>}
+                    {correctionCount > 0 && (
+                      <em>{t(`已纠正 ${correctionCount} 处`, `Edits: ${correctionCount}`)}</em>
+                    )}
                   </span>
                   <button
                     className="text-button"
                     disabled={selectedIndex >= snapshot.sections.length - 1}
                     onClick={() => openReader(snapshot.sections[selectedIndex + 1].id)}
                   >
-                    下一节
+                    {t('下一节', 'Next')}
                     <ArrowRight size={14} />
                   </button>
                 </div>
@@ -532,34 +616,41 @@ export default function App() {
           {snapshot ? (
             <span>
               <Check size={14} />
-              {suspiciousCount ? `${suspiciousCount} 个标题建议检查` : '章节已整理'}
+              {suspiciousCount
+                ? t(`${suspiciousCount} 个标题建议检查`, `Titles to review: ${suspiciousCount}`)
+                : t('章节已整理', 'Chapters organized')}
               <i />
-              支持多级目录与旧式 NCX 导航
+              {t('支持多级目录与旧式 NCX 导航', 'Nested contents and legacy NCX navigation')}
             </span>
           ) : (
             <div className="workflow-steps">
               <span>
-                <b>01</b>导入纯文本
+                <b>01</b>
+                {t('导入纯文本', 'Import text')}
               </span>
               <ArrowRight size={13} />
               <span>
-                <b>02</b>整理章节
+                <b>02</b>
+                {t('整理章节', 'Organize chapters')}
               </span>
               <ArrowRight size={13} />
               <span>
-                <b>03</b>带走电子书
+                <b>03</b>
+                {t('带走电子书', 'Export ebook')}
               </span>
             </div>
           )}
           <span className="privacy-note">
             <ShieldCheck size={14} />
-            无需注册 · 无需上传
+            {t('无需注册 · 无需上传', 'No account or uploads')}
           </span>
         </div>
       </main>
       <footer className="site-footer">
         <span>
-          拾页 SHIYE<span className="footer-dot">·</span>让阅读，回归文字本身。
+          {t('拾页 SHIYE', 'Shiye')}
+          <span className="footer-dot">·</span>
+          {t('让阅读，回归文字本身。', 'Local ebook converter')}
         </span>
         <span>MADE FOR YOUR STORIES</span>
       </footer>
@@ -571,15 +662,15 @@ export default function App() {
           </div>
           <div className="progress-copy">
             <strong>
-              {busy.label}…<span>{Math.round(busy.progress * 100)}%</span>
+              {progressText(busy.label, locale)}…<span>{Math.round(busy.progress * 100)}%</span>
             </strong>
             <div className="progress-track">
               <div style={{ width: `${busy.progress * 100}%` }} />
             </div>
-            <small>文件始终保留在你的设备上</small>
+            <small>{t('文件始终保留在你的设备上', 'Your files stay on your device')}</small>
           </div>
           <button className="text-button" onClick={() => cancel()}>
-            取消
+            {t('取消', 'Cancel')}
           </button>
         </div>
       )}
@@ -587,7 +678,11 @@ export default function App() {
         <div className="toast" role="status">
           <Check size={17} />
           <span>{toast}</span>
-          <button className="icon-button" aria-label="关闭消息" onClick={() => setToast('')}>
+          <button
+            className="icon-button"
+            aria-label={t('关闭消息', 'Dismiss notification')}
+            onClick={() => setToast('')}
+          >
             <X size={14} />
           </button>
         </div>
@@ -634,19 +729,25 @@ export default function App() {
         />
       )}
       {pendingImport && (
-        <Dialog title="重新导入文件？" onClose={() => setPendingImport(null)}>
+        <Dialog
+          title={t('重新导入文件？', 'Reimport the file?')}
+          onClose={() => setPendingImport(null)}
+        >
           <p className="dialog-intro">
-            更换文件或编码将重置当前的 {correctionCount} 处标题纠错及撤销记录。原 TXT 文件不会改变。
+            {t(
+              `更换文件或编码将重置当前的 ${correctionCount} 处标题纠错及撤销记录。原 TXT 文件不会改变。`,
+              `Changing the file or encoding resets your heading edits (${correctionCount}) and undo history. The source TXT stays intact.`,
+            )}
           </p>
           <div className="dialog-actions">
             <button className="button secondary" onClick={() => setPendingImport(null)}>
-              继续整理当前文件
+              {t('继续整理当前文件', 'Keep editing')}
             </button>
             <button
               className="button primary"
               onClick={() => void commitImport(pendingImport.file, pendingImport.encoding)}
             >
-              重新导入
+              {t('重新导入', 'Reimport')}
             </button>
           </div>
         </Dialog>

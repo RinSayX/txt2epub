@@ -1,3 +1,4 @@
+import { describeError, LocalizedError } from '../../i18n/locale';
 import { DOMParser, type Document, type Element, type Node } from '@xmldom/xmldom';
 import { unzipSync } from 'fflate';
 import type { BookMetadata, Checkpoint } from '../types';
@@ -26,16 +27,26 @@ function archivePath(base: string, href: string): string {
   try {
     path = decodeURIComponent(href.split(/[?#]/, 1)[0]);
   } catch {
-    throw new Error(`EPUB 资源路径编码无效：${href}`);
+    throw new LocalizedError(
+      `EPUB 资源路径编码无效：${href}`,
+      `Invalid encoding in EPUB resource path: ${href}`,
+    );
   }
   if (!path && base && /^[#?]/.test(href)) return base;
   if (!path || /^[a-z][a-z\d+.-]*:/i.test(path) || path.startsWith('//') || /[\\\x00]/.test(path))
-    throw new Error(`EPUB 包含无法读取的资源路径：${href}`);
+    throw new LocalizedError(
+      `EPUB 包含无法读取的资源路径：${href}`,
+      `Unreadable EPUB resource path: ${href}`,
+    );
   const parts = path.startsWith('/') ? [] : base.split('/').slice(0, -1);
   for (const part of path.split('/')) {
     if (!part || part === '.') continue;
     if (part === '..') {
-      if (!parts.length) throw new Error(`EPUB 资源路径超出书籍范围：${href}`);
+      if (!parts.length)
+        throw new LocalizedError(
+          `EPUB 资源路径超出书籍范围：${href}`,
+          `EPUB resource path points outside the book: ${href}`,
+        );
       parts.pop();
     } else parts.push(part);
   }
@@ -48,20 +59,23 @@ function readEntries(bytes: Uint8Array, wanted: Set<string>): Record<string, Uin
     return unzipSync(bytes, {
       filter: ({ name }) => {
         if (!wanted.has(name)) return false;
-        if (seen.has(name)) throw new Error(`重复的 EPUB 资源：${name}`);
+        if (seen.has(name))
+          throw new LocalizedError(`重复的 EPUB 资源：${name}`, `Duplicate EPUB resource: ${name}`);
         seen.add(name);
         return true;
       },
     });
   } catch (error) {
-    throw new Error(
-      `无法解压 EPUB，文件可能损坏或受到加密保护。${error instanceof Error ? `（${error.message}）` : ''}`,
+    const [detail, detailEn] = describeError(error, ['', '']);
+    throw new LocalizedError(
+      `无法解压 EPUB，文件可能损坏或受到加密保护。${detail ? `（${detail}）` : ''}`,
+      `Could not unpack the EPUB. It may be damaged or encrypted.${detailEn ? ` (${detailEn})` : ''}`,
     );
   }
 }
 
 function parseXml(bytes: Uint8Array | undefined, path: string, xhtml = false): Document {
-  if (!bytes) throw new Error(`EPUB 缺少资源：${path}`);
+  if (!bytes) throw new LocalizedError(`EPUB 缺少资源：${path}`, `Missing EPUB resource: ${path}`);
   try {
     // EPUB XML resources use UTF-8 or UTF-16. TextDecoder handles their BOMs explicitly.
     const utf16 = (bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0x3c && bytes[1] === 0);
@@ -72,11 +86,14 @@ function parseXml(bytes: Uint8Array | undefined, path: string, xhtml = false): D
     }).decode(bytes);
     return new DOMParser({
       onError: (level) => {
-        if (level !== 'warning') throw new Error('无效的 XML');
+        if (level !== 'warning') throw new LocalizedError('无效的 XML', 'Invalid XML');
       },
     }).parseFromString(text, xhtml ? 'application/xhtml+xml' : 'application/xml');
   } catch {
-    throw new Error(`EPUB 资源无法解析：${path}。请检查文件是否损坏、加密或使用了无效的 XHTML。`);
+    throw new LocalizedError(
+      `EPUB 资源无法解析：${path}。请检查文件是否损坏、加密或使用了无效的 XHTML。`,
+      `Could not parse EPUB resource: ${path}. Check for corruption, encryption or invalid XHTML.`,
+    );
   }
 }
 
@@ -191,7 +208,11 @@ export async function extractEpub(
     rootfiles.find(
       (element) => element.getAttribute('media-type') === 'application/oebps-package+xml',
     ) ?? rootfiles[0];
-  if (!rootfile?.getAttribute('full-path')) throw new Error('EPUB 未声明有效的书籍内容文件。');
+  if (!rootfile?.getAttribute('full-path'))
+    throw new LocalizedError(
+      'EPUB 未声明有效的书籍内容文件。',
+      'The EPUB does not declare a valid package document.',
+    );
   const opfPath = archivePath('', rootfile.getAttribute('full-path')!);
   const opf = parseXml(readEntries(bytes, new Set([opfPath]))[opfPath], opfPath);
   const metadata: BookMetadata = {
@@ -206,11 +227,18 @@ export async function extractEpub(
     elements(opf, OPF, 'item').map((item) => [item.getAttribute('id'), item]),
   );
   const spine = elements(opf, OPF, 'itemref');
-  if (!spine.length) throw new Error('EPUB 没有可读取的阅读顺序（spine）。');
+  if (!spine.length)
+    throw new LocalizedError(
+      'EPUB 没有可读取的阅读顺序（spine）。',
+      'The EPUB has no readable reading order (spine).',
+    );
   const paths = spine.map((reference) => {
     const item = manifest.get(reference.getAttribute('idref'));
     if (!item?.getAttribute('href'))
-      throw new Error(`EPUB 阅读顺序引用无效：${reference.getAttribute('idref')}`);
+      throw new LocalizedError(
+        `EPUB 阅读顺序引用无效：${reference.getAttribute('idref')}`,
+        `Invalid reading order reference: ${reference.getAttribute('idref')}`,
+      );
     return { item, path: archivePath(opfPath, item.getAttribute('href')!) };
   });
   if (headers['META-INF/encryption.xml']) {
@@ -219,7 +247,10 @@ export async function extractEpub(
       (reference) => archivePath('', reference.getAttribute('URI') ?? ''),
     );
     if (locked.includes(opfPath) || paths.some(({ path }) => locked.includes(path)))
-      throw new Error('这本 EPUB 的正文受到加密或 DRM 保护，无法转换为 TXT。请使用未加密的 EPUB。');
+      throw new LocalizedError(
+        '这本 EPUB 的正文受到加密或 DRM 保护，无法转换为 TXT。请使用未加密的 EPUB。',
+        'The text is encrypted or DRM-protected. Choose an unencrypted EPUB.',
+      );
   }
   const excluded = new Set<string>();
   const omittedIds = new Map<string, Set<string>>();
@@ -232,7 +263,10 @@ export async function extractEpub(
       try {
         id = decodeURIComponent(href.slice(hash + 1));
       } catch {
-        throw new Error(`EPUB 资源锚点编码无效：${href}`);
+        throw new LocalizedError(
+          `EPUB 资源锚点编码无效：${href}`,
+          `Invalid encoding in EPUB resource fragment: ${href}`,
+        );
       }
       const ids = omittedIds.get(path) ?? new Set<string>();
       ids.add(id);
@@ -288,11 +322,16 @@ export async function extractEpub(
       skippedCount++;
       continue;
     }
-    if (!files[path]) throw new Error(`EPUB 缺少资源：${path}`);
+    if (!files[path])
+      throw new LocalizedError(`EPUB 缺少资源：${path}`, `Missing EPUB resource: ${path}`);
     const document = parseXml(files[path], path, true);
     delete files[path];
     const body = elements(document, XHTML, 'body')[0];
-    if (!body) throw new Error(`EPUB 正文缺少 body 元素：${path}`);
+    if (!body)
+      throw new LocalizedError(
+        `EPUB 正文缺少 body 元素：${path}`,
+        `Missing body element in EPUB document: ${path}`,
+      );
     if (types(body).some((type) => type === 'cover' || type === 'toc')) {
       skippedCount++;
       continue;
@@ -306,7 +345,10 @@ export async function extractEpub(
     else skippedCount++;
   }
   if (!chapters.length)
-    throw new Error('未找到可提取的文字正文。图片型或扫描版 EPUB 需要先进行文字识别（OCR）。');
+    throw new LocalizedError(
+      '未找到可提取的文字正文。图片型或扫描版 EPUB 需要先进行文字识别（OCR）。',
+      'No readable text was found. Scanned or image-based EPUBs need OCR first.',
+    );
   await checkpoint(1);
   return {
     metadata,

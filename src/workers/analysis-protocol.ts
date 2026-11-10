@@ -14,4 +14,4 @@ export type AnalysisResponse =
   | { type: 'ready' }
   | { type: 'progress'; value: number }
   | { type: 'result'; outline: Outline; text?: string }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string; messageEn?: string };

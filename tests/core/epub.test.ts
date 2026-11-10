@@ -4,12 +4,32 @@ import { strFromU8, unzipSync } from 'fflate';
 import { generateEpub } from '../../src/core/epub/generate';
 import { buildOutline } from '../../src/core/outline';
 import { DEFAULT_RULES } from '../../src/core/rules';
+import { ENGLISH_CHAPTER_PATTERN } from '../../src/core/regex';
 
 const metadata = { title: '风 & 雨 <故事>', author: '某某 "作者"', language: 'zh-CN' };
 const text =
   '前言\n\n第一卷 山\n卷首说明\n第一章 风\n　正文 <tag> & "引号"\n\n次行😀\n第二卷 引用。\n引用的下文\n第二章 雨\n结束';
 
 describe('EPUB3 export', () => {
+  it('recognizes English chapter numbers and exports English navigation and front matter', async () => {
+    const source = 'About this book\nChapter 12: The Trial\nBody text\nCHAPTER 13\nMore text';
+    const outline = await buildOutline(source, DEFAULT_RULES, undefined, undefined, undefined, [
+      {
+        id: 'english',
+        name: 'English chapters',
+        level: 3,
+        pattern: ENGLISH_CHAPTER_PATTERN,
+        enabled: true,
+      },
+    ]);
+    expect(outline.sections.slice(1).map((section) => section.numbering?.value)).toEqual([12, 13]);
+    const files = unzipSync(await generateEpub(source, outline, { ...metadata, language: 'en' }));
+    const nav = strFromU8(files['OEBPS/Text/nav.xhtml']);
+    expect(nav).toContain('<h1>Contents</h1>');
+    expect(nav).toContain('>Chapter 12: The Trial</a>');
+    expect(strFromU8(files['OEBPS/Text/section-000001.xhtml'])).toContain('>Introduction</h1>');
+    expect(strFromU8(files['OEBPS/content.opf'])).toContain('<dc:language>en</dc:language>');
+  });
   it('includes the optional PNG cover as the first reading page with matching cover metadata and no styles', async () => {
     // The renderer owns PNG encoding; the packager must preserve the supplied image bytes.
     const coverPng = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);

@@ -1,9 +1,13 @@
+import { describeError, localize, type Copy } from '../i18n/locale';
+import { useLanguage, useText } from '../i18n/LanguageProvider';
 import { useEffect, useRef, useState } from 'react';
 import { COVER_HEIGHT, COVER_WIDTH, drawCover } from '../lib/cover';
 
 export default function CoverPreview({ title }: { title: string }) {
+  const t = useText();
+  const { locale } = useLanguage();
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<Copy | ''>('');
   useEffect(() => {
     let active = true;
     setError('');
@@ -13,7 +17,12 @@ export default function CoverPreview({ title }: { title: string }) {
         try {
           drawCover(canvas.current!, title);
         } catch (caught) {
-          setError((caught as Error).message);
+          setError(
+            describeError(caught, [
+              '封面生成失败，请重试。',
+              'Could not generate the cover. Try again.',
+            ]),
+          );
         }
       });
     }
@@ -29,12 +38,15 @@ export default function CoverPreview({ title }: { title: string }) {
           width={COVER_WIDTH}
           height={COVER_HEIGHT}
           role="img"
-          aria-label={`自动封面预览：${title.trim()}`}
+          aria-label={t(
+            `自动封面预览：${title.trim()}`,
+            `Generated cover preview: ${title.trim()}`,
+          )}
         />
       ) : (
-        <p>请先填写书名以预览封面。</p>
+        <p>{t('请先填写书名以预览封面。', 'Enter a book title to preview the cover.')}</p>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{localize(error, locale)}</p>}
     </div>
   );
 }

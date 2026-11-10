@@ -1,15 +1,18 @@
+import { useLanguage } from '../i18n/LanguageProvider';
+import { copy, describeError, localize, type Copy } from '../i18n/locale';
 import { useEffect, useRef, useState } from 'react';
 import { DocumentClient } from '../workers/client';
 import type { EpubToTxtResult } from '../workers/protocol';
 
 /** A separate Worker keeps conversion and cancellation independent of the TXT session. */
 export function useEpubConversion() {
+  const { locale } = useLanguage();
   const client = useRef<DocumentClient | null>(null);
   const sequence = useRef(0);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState<{ progress: number; label: string } | null>(null);
   const [result, setResult] = useState<EpubToTxtResult | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<Copy | ''>('');
   const [downloaded, setDownloaded] = useState(false);
   useEffect(
     () => () => {
@@ -22,7 +25,7 @@ export function useEpubConversion() {
   async function convert(nextFile: File) {
     if (client.current) return;
     if (!/\.epub$/i.test(nextFile.name)) {
-      setError('请选择 .epub 格式的电子书。');
+      setError(copy('请选择 .epub 格式的电子书。', 'Choose an .epub ebook.'));
       return;
     }
     const job = ++sequence.current;
@@ -42,7 +45,8 @@ export function useEpubConversion() {
       );
       if (job === sequence.current) setResult(converted);
     } catch (caught) {
-      if (job === sequence.current) setError((caught as Error).message);
+      if (job === sequence.current)
+        setError(describeError(caught, ['转换失败，请重试。', 'Conversion failed. Try again.']));
     } finally {
       instance.dispose();
       if (job === sequence.current) {
@@ -56,7 +60,18 @@ export function useEpubConversion() {
     client.current?.dispose();
     client.current = null;
     setBusy(null);
-    setError('转换已取消，可重新选择 EPUB。');
+    setError(
+      copy('转换已取消，可重新选择 EPUB。', 'Conversion canceled. You can choose another EPUB.'),
+    );
   }
-  return { file, busy, result, error, downloaded, setDownloaded, convert, cancel };
+  return {
+    file,
+    busy,
+    result,
+    error: localize(error, locale),
+    downloaded,
+    setDownloaded,
+    convert,
+    cancel,
+  };
 }

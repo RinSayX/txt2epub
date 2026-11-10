@@ -1,6 +1,6 @@
 # EPUB 转 TXT 使用说明
 
-[项目首页](../README.md) · [TXT 转 EPUB](TXT_TO_EPUB.md) · [验证与验收](VALIDATION.md)
+[项目首页](../README.md) · [TXT 转 EPUB](TXT_TO_EPUB.md) · [验证与验收](VALIDATION.md) · [English](en/EPUB_TO_TXT.md)
 
 ## 操作步骤
 

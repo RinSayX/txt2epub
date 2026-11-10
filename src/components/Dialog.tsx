@@ -1,3 +1,4 @@
+import { useText } from '../i18n/LanguageProvider';
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 
@@ -10,6 +11,7 @@ export default function Dialog({
   children: ReactNode;
   onClose: () => void;
 }) {
+  const t = useText();
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
   useEffect(() => {
@@ -38,7 +40,11 @@ export default function Dialog({
     >
       <div className="dialog-heading">
         <h2 id={id}>{title}</h2>
-        <button className="icon-button" aria-label="关闭弹窗" onClick={onClose}>
+        <button
+          className="icon-button"
+          aria-label={t('关闭弹窗', 'Close dialog')}
+          onClick={onClose}
+        >
           <X size={20} />
         </button>
       </div>

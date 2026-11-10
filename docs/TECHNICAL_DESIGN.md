@@ -1,6 +1,6 @@
 # TXT 与 EPUB 互转技术设计
 
-本文描述当前实现。[项目首页](../README.md) · [源码入口](STRUCTURE.md) · [验证与验收](VALIDATION.md)
+本文描述当前实现。[项目首页](../README.md) · [源码入口](STRUCTURE.md) · [验证与验收](VALIDATION.md) · [English](en/TECHNICAL_DESIGN.md)
 
 ## 架构与会话
 

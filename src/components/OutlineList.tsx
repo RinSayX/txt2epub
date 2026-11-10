@@ -1,5 +1,6 @@
+import { useText } from '../i18n/LanguageProvider';
 import { ChevronDown, ChevronRight, FileText, Search, AlertCircle, ListTree } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Section } from '../core/types';
 
 interface Props {
@@ -12,6 +13,16 @@ interface Props {
 const ROW_HEIGHT = 44;
 
 export default function OutlineList({ sections, selectedId, onSelect, revealTarget }: Props) {
+  const t = useText();
+  const headingTitle = useCallback(
+    (section: Section) =>
+      section.lineIndex !== null
+        ? section.title
+        : sections.length > 1
+          ? t('简介', 'Introduction')
+          : t('正文', 'Text'),
+    [sections.length, t],
+  );
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [scrollTop, setScrollTop] = useState(0);
@@ -33,7 +44,7 @@ export default function OutlineList({ sections, selectedId, onSelect, revealTarg
   const visible = useMemo(() => {
     if (query.trim())
       return sections.filter((section) =>
-        section.title.toLowerCase().includes(query.trim().toLowerCase()),
+        headingTitle(section).toLowerCase().includes(query.trim().toLowerCase()),
       );
     const hidden = new Set<string>();
     return sections.filter((section) => {
@@ -43,7 +54,7 @@ export default function OutlineList({ sections, selectedId, onSelect, revealTarg
       }
       return true;
     });
-  }, [sections, query, collapsed]);
+  }, [sections, query, collapsed, headingTitle]);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -68,34 +79,34 @@ export default function OutlineList({ sections, selectedId, onSelect, revealTarg
       <div className="outline-search">
         <Search size={15} />
         <input
-          aria-label="搜索章节"
-          placeholder="查找章节标题…"
+          aria-label={t('搜索章节', 'Search chapters')}
+          placeholder={t('查找章节标题…', 'Find a chapter…')}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
             if (scrollRef.current) scrollRef.current.scrollTop = 0;
           }}
         />
-        <kbd>查找</kbd>
+        <kbd>{t('查找', 'Find')}</kbd>
       </div>
       <div
         className="outline-scroll"
         ref={scrollRef}
         onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
         role="tree"
-        aria-label="小说章节目录"
+        aria-label={t('小说章节目录', 'Novel contents')}
       >
         {!sections.length ? (
           <div className="sidebar-empty">
             <ListTree size={30} strokeWidth={1.2} />
-            <p>故事的脉络，从这里开始</p>
-            <span>导入 TXT 后自动生成章节目录</span>
+            <p>{t('故事的脉络，从这里开始', 'Your contents will appear here')}</p>
+            <span>{t('导入 TXT 后自动生成章节目录', 'Import a TXT file to detect chapters')}</span>
           </div>
         ) : !visible.length ? (
           <div className="sidebar-empty">
             <Search size={24} />
-            <p>没有找到相关章节</p>
-            <span>试试其他关键词</span>
+            <p>{t('没有找到相关章节', 'No matching chapters')}</p>
+            <span>{t('试试其他关键词', 'Try a different search')}</span>
           </div>
         ) : (
           <div style={{ height: visible.length * ROW_HEIGHT, position: 'relative' }}>
@@ -112,7 +123,10 @@ export default function OutlineList({ sections, selectedId, onSelect, revealTarg
                 {parents.has(section.id) ? (
                   <button
                     className="tree-toggle"
-                    aria-label={`${collapsed.has(section.id) ? '展开' : '折叠'} ${section.title}`}
+                    aria-label={t(
+                      `${collapsed.has(section.id) ? '展开' : '折叠'} ${section.title}`,
+                      `${collapsed.has(section.id) ? 'Expand' : 'Collapse'} ${section.title}`,
+                    )}
                     onClick={() =>
                       setCollapsed((previous) => {
                         const next = new Set(previous);
@@ -134,12 +148,15 @@ export default function OutlineList({ sections, selectedId, onSelect, revealTarg
                 <button
                   className="tree-title"
                   onClick={() => onSelect(section.id)}
-                  title={section.title}
+                  title={headingTitle(section)}
                 >
-                  {section.title}
+                  {headingTitle(section)}
                 </button>
                 {section.suspicious && (
-                  <span className="suspicion" title="可能是正文引用，请检查">
+                  <span
+                    className="suspicion"
+                    title={t('可能是正文引用，请检查', 'Possible quotation. Check this heading.')}
+                  >
                     <AlertCircle size={13} />
                   </span>
                 )}
@@ -150,7 +167,12 @@ export default function OutlineList({ sections, selectedId, onSelect, revealTarg
       </div>
       <div className="outline-footer">
         <span className="tiny-dot" />
-        {sections.length ? `${sections.length} 节 · 按原文顺序排列` : '等待导入文件'}
+        {sections.length
+          ? t(
+              `${sections.length} 节 · 按原文顺序排列`,
+              `${sections.length} sections · In source order`,
+            )
+          : t('等待导入文件', 'Waiting for a file')}
         <button
           className="text-button"
           disabled={!sections.length}
@@ -166,7 +188,7 @@ export default function OutlineList({ sections, selectedId, onSelect, revealTarg
             )
           }
         >
-          {collapsed.size ? '展开全部' : '折叠全部'}
+          {collapsed.size ? t('展开全部', 'Expand all') : t('折叠全部', 'Collapse all')}
         </button>
       </div>
     </>

@@ -1,6 +1,6 @@
 # TXT 转 EPUB 使用说明
 
-[项目首页](../README.md) · [自定义正则](REGEX_RULES.md) · [章节编号检查](NUMBERING_CHECK.md)
+[项目首页](../README.md) · [自定义正则](REGEX_RULES.md) · [章节编号检查](NUMBERING_CHECK.md) · [English](en/TXT_TO_EPUB.md)
 
 ## 导入与整理
 

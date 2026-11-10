@@ -62,7 +62,9 @@ export interface ContinuityIssue {
   id: string;
   kind: 'gap' | 'duplicate' | 'order';
   message: string;
+  messageEn?: string;
   scope: string;
+  scopeEn?: string;
   sectionIds: string[];
 }
 
@@ -72,7 +74,7 @@ export interface ContinuityResult {
   optionsKey: string;
   issues: ContinuityIssue[];
   unparsed: string[];
-  splits: { label: string; sectionIds: string[] }[];
+  splits: { label: string; labelEn?: string; sectionIds: string[] }[];
   checkedCount: number;
   excludedCount: number;
 }

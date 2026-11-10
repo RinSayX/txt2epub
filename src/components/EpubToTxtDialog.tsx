@@ -1,3 +1,5 @@
+import { progressText } from '../i18n/locale';
+import { useLanguage, useText } from '../i18n/LanguageProvider';
 import { useRef, useState, type DragEvent } from 'react';
 import { ArrowDownToLine, FileText, Upload } from 'lucide-react';
 import Dialog from './Dialog';
@@ -7,6 +9,8 @@ import { downloadTxt } from '../lib/download';
 import { formatBytes } from '../lib/format';
 
 export default function EpubToTxtDialog({ onClose }: { onClose: () => void }) {
+  const t = useText();
+  const { locale } = useLanguage();
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const { file, busy, result, error, downloaded, setDownloaded, convert, cancel } =
@@ -18,9 +22,12 @@ export default function EpubToTxtDialog({ onClose }: { onClose: () => void }) {
     if (selected) void convert(selected);
   }
   return (
-    <Dialog title="EPUB 转 TXT" onClose={onClose}>
+    <Dialog title={t('EPUB 转 TXT', 'EPUB to TXT')} onClose={onClose}>
       <p className="dialog-intro">
-        按电子书的阅读顺序提取标题和正文，在本地生成 UTF-8 文本。当前 TXT 工作台内容不受影响。
+        {t(
+          '按电子书的阅读顺序提取标题和正文，在本地生成 UTF-8 文本。当前 TXT 工作台内容不受影响。',
+          'Extract headings and text in reading order and create a UTF-8 file on this device. This runs separately from the TXT workspace.',
+        )}
       </p>
       <div
         className={`epub-dropzone ${dragging ? 'dragging' : ''}`}
@@ -34,7 +41,11 @@ export default function EpubToTxtDialog({ onClose }: { onClose: () => void }) {
         onDrop={drop}
       >
         <FileText size={24} />
-        <p>{file ? file.name : '拖入 EPUB 电子书，或点击选择'}</p>
+        <p>
+          {file
+            ? file.name
+            : t('拖入 EPUB 电子书，或点击选择', 'Drop an EPUB here or choose a file')}
+        </p>
         {file && <small>{formatBytes(file.size)}</small>}
         <button
           className="button secondary"
@@ -42,14 +53,16 @@ export default function EpubToTxtDialog({ onClose }: { onClose: () => void }) {
           onClick={() => fileInput.current?.click()}
         >
           <Upload size={15} />
-          {file ? '重新选择 EPUB' : '选择 EPUB 文件'}
+          {file
+            ? t('重新选择 EPUB', 'Choose another EPUB')
+            : t('选择 EPUB 文件', 'Choose EPUB file')}
         </button>
         <input
           ref={fileInput}
           className="sr-only"
           type="file"
           accept=".epub,application/epub+zip"
-          aria-label="选择要转换的 EPUB"
+          aria-label={t('选择要转换的 EPUB', 'Select an EPUB to convert')}
           disabled={!!busy}
           onChange={(event) => {
             const selected = event.target.files?.[0];
@@ -62,11 +75,15 @@ export default function EpubToTxtDialog({ onClose }: { onClose: () => void }) {
       {busy && (
         <div className="epub-progress" role="status" aria-live="polite">
           <p>
-            {busy.label}… {Math.round(busy.progress * 100)}%
+            {progressText(busy.label, locale)}… {Math.round(busy.progress * 100)}%
           </p>
-          <progress aria-label="EPUB 转 TXT 进度" max={1} value={busy.progress} />
+          <progress
+            aria-label={t('EPUB 转 TXT 进度', 'EPUB to TXT progress')}
+            max={1}
+            value={busy.progress}
+          />
           <button className="text-button" onClick={cancel}>
-            取消转换
+            {t('取消转换', 'Cancel conversion')}
           </button>
         </div>
       )}
@@ -79,17 +96,29 @@ export default function EpubToTxtDialog({ onClose }: { onClose: () => void }) {
         <>
           <div className="epub-result">
             <strong>{result.title}</strong>
-            {result.author && <p>作者：{result.author}</p>}
+            {result.author && (
+              <p>
+                {t('作者：', 'Author: ')}
+                {result.author}
+              </p>
+            )}
             <p>
-              已提取 {result.documentCount} 个正文文档 · {result.characterCount.toLocaleString()}{' '}
-              字符 · {formatBytes(result.bytes.length)}
+              {t(
+                `已提取 ${result.documentCount} 个正文文档 · ${result.characterCount.toLocaleString('zh-CN')} 字符 · ${formatBytes(result.bytes.length)}`,
+                `Documents: ${result.documentCount} · Characters: ${result.characterCount.toLocaleString('en')} · ${formatBytes(result.bytes.length)}`,
+              )}
             </p>
             {result.skippedCount > 0 && (
-              <small>已略过 {result.skippedCount} 个封面、目录、重复、非文字或空内容条目。</small>
+              <small>
+                {t(
+                  `已略过 ${result.skippedCount} 个封面、目录、重复、非文字或空内容条目。`,
+                  `Skipped entries: ${result.skippedCount} (covers, contents, duplicates, or entries without text).`,
+                )}
+              </small>
             )}
           </div>
           <label className="form-field">
-            文本预览（前 4,000 字符）
+            {t('文本预览（前 4,000 字符）', 'Text preview (first 4,000 characters)')}
             <textarea className="epub-text-preview" readOnly value={result.preview} rows={8} />
           </label>
           <button
@@ -100,18 +129,20 @@ export default function EpubToTxtDialog({ onClose }: { onClose: () => void }) {
             }}
           >
             <ArrowDownToLine size={17} />
-            下载 TXT
+            {t('下载 TXT', 'Download TXT')}
           </button>
           {downloaded && (
             <p className="epub-download-status" role="status">
-              TXT 已生成，下载已开始。
+              {t('TXT 已生成，下载已开始。', 'TXT is ready. Download started.')}
             </p>
           )}
         </>
       )}
       <p className="export-note">
-        保留正文中已有的标题、段落和换行，不重复添加目录标题。略过封面、目录页、图片、脚本和样式，不加载外部资源；不保留视觉排版，也不进行图片文字识别。不支持
-        DRM 加密正文。
+        {t(
+          '保留正文中已有的标题、段落和换行，不重复添加目录标题。略过封面、目录页、图片、脚本和样式，不加载外部资源；不保留视觉排版，也不进行图片文字识别。不支持 DRM 加密正文。',
+          'Keeps existing headings, paragraphs and line breaks in the reading order. Skips covers, contents pages, images, scripts and styles. Does not load external resources, preserve visual layout, perform OCR or extract DRM-protected text.',
+        )}
       </p>
     </Dialog>
   );

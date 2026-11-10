@@ -1,3 +1,4 @@
+import { useLanguage, useText } from '../i18n/LanguageProvider';
 import { Check, FileText } from 'lucide-react';
 import type { DocumentSnapshot, Encoding } from '../core/types';
 import { ENCODINGS } from '../config';
@@ -10,6 +11,8 @@ interface Props {
   onEncodingChange: (encoding: Encoding) => void;
 }
 export default function FileInfo({ snapshot, encoding, busy, onEncodingChange }: Props) {
+  const t = useText();
+  const { locale } = useLanguage();
   return (
     <div className="file-strip">
       <div className="file-symbol">
@@ -20,11 +23,12 @@ export default function FileInfo({ snapshot, encoding, busy, onEncodingChange }:
         <span>
           {formatBytes(snapshot.size)}
           <i />
-          {snapshot.lineCount.toLocaleString()} 行原文
+          {snapshot.lineCount.toLocaleString(locale)}
+          {t('行原文', ' source lines')}
         </span>
       </div>
       <div className="encoding-field">
-        <label htmlFor="encoding">文本编码</label>
+        <label htmlFor="encoding">{t('文本编码', 'Text encoding')}</label>
         <select
           id="encoding"
           value={encoding}
@@ -33,7 +37,7 @@ export default function FileInfo({ snapshot, encoding, busy, onEncodingChange }:
         >
           {ENCODINGS.map((item) => (
             <option key={item.value} value={item.value}>
-              {item.label}
+              {item.value === 'auto' ? t(item.label, 'Auto detect') : item.label}
             </option>
           ))}
         </select>
@@ -42,15 +46,15 @@ export default function FileInfo({ snapshot, encoding, busy, onEncodingChange }:
       <div className="file-stats">
         <div>
           <strong>{snapshot.headingCount}</strong>
-          <span>个标题</span>
+          <span>{t('个标题', 'headings')}</span>
         </div>
         <div>
-          <strong>{formatCharacterCount(snapshot.characterCount)}</strong>
-          <span>字符</span>
+          <strong>{formatCharacterCount(snapshot.characterCount, locale)}</strong>
+          <span>{t('字符', 'characters')}</span>
         </div>
         <span className="local-status">
           <Check size={13} />
-          本地文件
+          {t('本地文件', 'Local file')}
         </span>
       </div>
     </div>

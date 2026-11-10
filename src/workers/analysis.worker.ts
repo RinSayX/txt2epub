@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+import { describeError } from '../i18n/locale';
 import { buildCorrectedOutline } from '../core/corrections';
 import type { AnalysisJob, AnalysisResponse } from './analysis-protocol';
 
@@ -24,6 +25,7 @@ worker.onmessage = async ({ data: job }: MessageEvent<AnalysisJob>) => {
       ...(job.deleted.length ? { text: result.text } : {}),
     });
   } catch (error) {
-    send({ type: 'error', message: error instanceof Error ? error.message : '规则匹配失败。' });
+    const [message, messageEn] = describeError(error, ['规则匹配失败。', 'Rule matching failed.']);
+    send({ type: 'error', message, messageEn });
   }
 };

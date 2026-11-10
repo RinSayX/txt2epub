@@ -57,7 +57,7 @@ export type WorkerRequest =
 export type WorkerResponse =
   | { id: number; type: 'result'; payload: unknown }
   | { id: number; type: 'progress'; value: number; label: string }
-  | { id: number; type: 'error'; message: string };
+  | { id: number; type: 'error'; message: string; messageEn?: string };
 
 type WithoutId<T> = T extends unknown ? Omit<T, 'id'> : never;
 export type Request = WithoutId<Exclude<WorkerRequest, { type: 'cancel' }>>;

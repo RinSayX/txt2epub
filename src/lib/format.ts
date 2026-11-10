@@ -1,8 +1,12 @@
+import type { Locale } from '../i18n/locale';
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
 }
 
-export const formatCharacterCount = (value: number) =>
-  value >= 10000 ? `${(value / 10000).toFixed(1)} 万` : value.toLocaleString('zh-CN');
+export const formatCharacterCount = (value: number, locale: Locale = 'zh-CN') =>
+  locale === 'zh-CN' && value >= 10000
+    ? `${(value / 10000).toFixed(1)} 万`
+    : value.toLocaleString(locale);

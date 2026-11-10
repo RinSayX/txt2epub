@@ -1,6 +1,6 @@
 # 项目结构与职责
 
-[项目首页](../README.md) · [技术设计](TECHNICAL_DESIGN.md) · [验证与验收](VALIDATION.md)
+[项目首页](../README.md) · [技术设计](TECHNICAL_DESIGN.md) · [验证与验收](VALIDATION.md) · [English](en/STRUCTURE.md)
 
 ```text
 src/

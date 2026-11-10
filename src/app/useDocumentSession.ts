@@ -1,3 +1,5 @@
+import { useLanguage } from '../i18n/LanguageProvider';
+import { copy, describeError, localize, type Copy } from '../i18n/locale';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   Corrections,
@@ -19,6 +21,7 @@ import { readPreferences, persistRules } from './preferences';
 import { continuityKey, DEFAULT_CONTINUITY_OPTIONS } from '../core/continuity';
 
 export function useDocumentSession() {
+  const { locale } = useLanguage();
   const [preferences] = useState(readPreferences);
   const [rules, setRules] = useState<HeadingRule[]>(preferences.rules);
   const [appliedRules, setAppliedRules] = useState<HeadingRule[]>(preferences.rules);
@@ -42,8 +45,8 @@ export function useDocumentSession() {
   const [past, setPast] = useState<Corrections[]>([]);
   const [future, setFuture] = useState<Corrections[]>([]);
   const [busy, setBusy] = useState<{ label: string; progress: number } | null>(null);
-  const [error, setError] = useState('');
-  const [toast, setToast] = useState('');
+  const [error, setError] = useState<Copy | ''>('');
+  const [toast, setToast] = useState<Copy | ''>('');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [language, setLanguage] = useState('zh-CN');
@@ -100,8 +103,8 @@ export function useDocumentSession() {
         setBusy({ progress, label }),
       );
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : '操作失败，请重试。';
-      if (message === '操作已取消') setToast(message);
+      const message = describeError(caught, ['操作失败，请重试。', 'Operation failed. Try again.']);
+      if (message[0] === '操作已取消') setToast(message);
       else setError(message);
       return null;
     } finally {
@@ -142,7 +145,8 @@ export function useDocumentSession() {
         if (!stale && result.revision === snapshot.revision) setPreview(result);
       })
       .catch((caught: Error) => {
-        if (!stale) setError(caught.message);
+        if (!stale)
+          setError(describeError(caught, ['操作失败，请重试。', 'Operation failed. Try again.']));
       })
       .finally(() => {
         if (!stale) setPreviewLoading(false);
@@ -155,14 +159,14 @@ export function useDocumentSession() {
   async function importFile(nextFile: File, requestedEncoding: Encoding = encoding) {
     if (locked.current) return;
     if (!/\.txt$/i.test(nextFile.name)) {
-      setError('请选择 .txt 格式的小说文件。');
+      setError(copy('请选择 .txt 格式的小说文件。', 'Choose a .txt novel.'));
       return;
     }
     try {
       validateRules(rules, maxLength);
       validateRegexRules(regexRules);
     } catch (caught) {
-      setError((caught as Error).message);
+      setError(describeError(caught, ['操作失败，请重试。', 'Operation failed. Try again.']));
       setTab('rules');
       return;
     }
@@ -205,8 +209,14 @@ export function useDocumentSession() {
     setTab('outline');
     setToast(
       result.headingCount
-        ? `已识别 ${result.headingCount} 个标题，开始整理你的故事吧。`
-        : '未识别到标题，将按整本单章节导出。可在识别规则中调整。',
+        ? copy(
+            `已识别 ${result.headingCount} 个标题，开始整理你的故事吧。`,
+            `Detected headings: ${result.headingCount}.`,
+          )
+        : copy(
+            '未识别到标题，将按整本单章节导出。可在识别规则中调整。',
+            'No headings found. Export will use one section unless you adjust the rules.',
+          ),
     );
   }
   async function applyRules() {
@@ -214,7 +224,7 @@ export function useDocumentSession() {
       validateRules(rules, maxLength);
       validateRegexRules(regexRules);
     } catch (caught) {
-      setError((caught as Error).message);
+      setError(describeError(caught, ['操作失败，请重试。', 'Operation failed. Try again.']));
       return;
     }
     if (snapshot) {
@@ -241,14 +251,14 @@ export function useDocumentSession() {
     setAppliedRegexRules(structuredClone(regexRules));
     setAppliedMaxLength(maxLength);
     persistRules(rules, maxLength, regexRules);
-    setToast('识别规则已应用。');
+    setToast(copy('识别规则已应用。', 'Recognition rules applied.'));
   }
   async function testRegexRules(sampleText?: string): Promise<RegexTestResult | null> {
     try {
       validateRules(rules, maxLength);
       validateRegexRules(regexRules);
     } catch (caught) {
-      setError((caught as Error).message);
+      setError(describeError(caught, ['操作失败，请重试。', 'Operation failed. Try again.']));
       return null;
     }
     return perform<RegexTestResult>({
@@ -290,17 +300,23 @@ export function useDocumentSession() {
       );
       setToast(
         action === 'merge'
-          ? '已并入上一节，原标题行保留为正文。可点击撤销还原。'
-          : `已删除 ${next.deleted.length - deleted.length} 个空章节，子章节已保留。可点击撤销还原。`,
+          ? copy(
+              '已并入上一节，原标题行保留为正文。可点击撤销还原。',
+              'Merged into the previous section. The original heading is now body text. You can undo this.',
+            )
+          : copy(
+              `已删除 ${next.deleted.length - deleted.length} 个空章节，子章节已保留。可点击撤销还原。`,
+              `Empty sections removed: ${next.deleted.length - deleted.length}. Subsections were kept. You can undo this.`,
+            ),
       );
     } else if (action === 'undo') {
       setPast((items) => items.slice(0, -1));
       setFuture((items) => [...items, corrections]);
-      setToast('已撤销上一次纠错。');
+      setToast(copy('已撤销上一次纠错。', 'Edit undone.'));
     } else {
       setFuture((items) => items.slice(0, -1));
       setPast((items) => [...items, corrections]);
-      setToast('已重做纠错。');
+      setToast(copy('已重做纠错。', 'Edit redone.'));
     }
     setCorrections(next);
     setSnapshot(result);
@@ -348,7 +364,7 @@ export function useDocumentSession() {
 
   async function exportBook(cleanInvalidControls = false, coverPng?: Uint8Array) {
     if (!title.trim()) {
-      setError('请先填写书名。');
+      setError(copy('请先填写书名。', 'Enter a book title first.'));
       return;
     }
     const result = await perform<ExportResult>({
@@ -361,7 +377,10 @@ export function useDocumentSession() {
     if (!result) return;
     downloadEpub(result.bytes, title);
     setToast(
-      `《${title.trim()}》已生成，下载已开始。${cleanInvalidControls ? `已从导出内容清理 ${result.cleanedControlCount} 个不兼容控制字符，源 TXT 不变。` : ''}`,
+      copy(
+        `《${title.trim()}》已生成，下载已开始。${cleanInvalidControls ? `已从导出内容清理 ${result.cleanedControlCount} 个不兼容控制字符，源 TXT 不变。` : ''}`,
+        `“${title.trim()}” is ready. Download started.${cleanInvalidControls ? ` Unsupported control characters removed: ${result.cleanedControlCount}. The source TXT is intact.` : ''}`,
+      ),
     );
   }
   async function morePreview() {
@@ -383,7 +402,7 @@ export function useDocumentSession() {
           : previous,
       );
     } catch (caught) {
-      setError((caught as Error).message);
+      setError(describeError(caught, ['操作失败，请重试。', 'Operation failed. Try again.']));
     } finally {
       setPreviewLoading(false);
     }
@@ -413,9 +432,9 @@ export function useDocumentSession() {
     past,
     future,
     busy,
-    error,
+    error: localize(error, locale),
     setError,
-    toast,
+    toast: localize(toast, locale),
     setToast,
     title,
     setTitle,

@@ -1,3 +1,4 @@
+import { LocalizedError } from '../i18n/locale';
 import type {
   Checkpoint,
   ContinuityOptions,
@@ -14,6 +15,19 @@ export const DEFAULT_CONTINUITY_OPTIONS: ContinuityOptions = {
 
 export const continuityKey = (options: ContinuityOptions) =>
   JSON.stringify([options.scope, [...options.units].sort(), options.strictParts]);
+const englishUnits: Record<string, string> = {
+  章: 'Chapter',
+  回: 'Episode',
+  卷: 'Volume',
+  册: 'Book',
+};
+export const englishNumberingUnit = (unit: string, label: string) =>
+  unit.startsWith('regex:')
+    ? `Regex: ${label.slice('正则：'.length)}`
+    : (englishUnits[unit] ?? label);
+const englishPart = { 上: 'first part', 中: 'middle part', 下: 'last part' };
+const englishNumber = (value: number | string, unit: string) =>
+  `${englishUnits[unit] ?? (unit.startsWith('regex:') ? 'Number' : unit)} ${value}`;
 const numberedLabel = (value: number | string, label: string) =>
   label.startsWith('正则：') ? `编号${value}` : `第${value}${label}`;
 
@@ -28,7 +42,7 @@ export async function checkContinuity(
     options.units.some((unit) => typeof unit !== 'string') ||
     typeof options.strictParts !== 'boolean'
   )
-    throw new Error('编号检查设置无效。');
+    throw new LocalizedError('编号检查设置无效。', 'Invalid numbering check settings.');
   const result: ContinuityResult = {
     documentId: snapshot.documentId,
     revision: snapshot.revision,
@@ -40,7 +54,7 @@ export async function checkContinuity(
     excludedCount: 0,
   };
   const selected = new Set(options.units);
-  const groups = new Map<string, { label: string; sections: Section[] }>();
+  const groups = new Map<string, { label: string; labelEn: string; sections: Section[] }>();
   const containers: Section[] = [];
   for (let index = 0; index < snapshot.sections.length; index++) {
     const section = snapshot.sections[index];
@@ -57,6 +71,7 @@ export async function checkContinuity(
         const key = JSON.stringify([number.unit, section.level, boundary?.id ?? 'book']);
         const group = groups.get(key) ?? {
           label: `${boundary?.title ?? '全书'} · ${number.label}（层级 ${section.level}）`,
+          labelEn: `${boundary?.title ?? 'Whole book'} · ${englishNumberingUnit(number.unit, number.label)} (level ${section.level})`,
           sections: [],
         };
         group.sections.push(section);
@@ -79,13 +94,16 @@ export async function checkContinuity(
       kind: 'gap' | 'duplicate' | 'order',
       token: string,
       message: string,
+      messageEn: string,
       sections: Section[],
     ) =>
       result.issues.push({
         id: `${key}:${kind}:${token}`,
         kind,
         message,
+        messageEn,
         scope: group.label,
+        scopeEn: group.labelEn,
         sectionIds: sections.map((section) => section.id),
       });
     for (const section of group.sections) {
@@ -98,6 +116,7 @@ export async function checkContinuity(
           'order',
           section.id,
           `${numberedLabel(number.value!, number.label)}出现在${numberedLabel(previous.numbering!.value!, number.label)}之后`,
+          `${englishNumber(number.value!, number.unit)} appears after ${englishNumber(previous.numbering!.value!, number.unit)}.`,
           [previous, section],
         );
       else if (
@@ -112,6 +131,7 @@ export async function checkContinuity(
           'order',
           section.id,
           `${numberedLabel(number.value!, number.label)}分篇顺序异常：${previous.numbering!.part} → ${number.part}`,
+          `${englishNumber(number.value!, number.unit)} has parts out of order: ${englishPart[previous.numbering!.part!]} → ${englishPart[number.part]}.`,
           [previous, section],
         );
       previous = section;
@@ -125,6 +145,7 @@ export async function checkContinuity(
       if (allowed && parts.size === entries.length)
         result.splits.push({
           label: `${group.label} · ${numberedLabel(value, entries[0].numbering!.label)}（分篇）`,
+          labelEn: `${group.labelEn} · ${englishNumber(value, entries[0].numbering!.unit)} (split parts)`,
           sectionIds: entries.map((section) => section.id),
         });
       else if (allowed) {
@@ -135,6 +156,7 @@ export async function checkContinuity(
               'duplicate',
               `${value}:${part}`,
               `${numberedLabel(value, entries[0].numbering!.label)}（${part}）出现 ${repeated.length} 次`,
+              `${englishNumber(value, entries[0].numbering!.unit)} (${englishPart[part!]}) appears ${repeated.length} times.`,
               repeated,
             );
         }
@@ -143,6 +165,7 @@ export async function checkContinuity(
           'duplicate',
           String(value),
           `${numberedLabel(value, entries[0].numbering!.label)}出现 ${entries.length} 次`,
+          `${englishNumber(value, entries[0].numbering!.unit)} appears ${entries.length} times.`,
           entries,
         );
     }
@@ -150,13 +173,16 @@ export async function checkContinuity(
     for (let index = 1; index < values.length; index++) {
       const before = values[index - 1],
         after = values[index];
-      if (after - before > 1)
+      if (after - before > 1) {
+        const range = `${before + 1}${after - before > 2 ? `–${after - 1}` : ''}`;
         add(
           'gap',
           `${before}:${after}`,
-          `疑似缺少${numberedLabel(`${before + 1}${after - before > 2 ? `–${after - 1}` : ''}`, group.sections[0].numbering!.label)}（${after - before - 1} 个编号）`,
+          `疑似缺少${numberedLabel(range, group.sections[0].numbering!.label)}（${after - before - 1} 个编号）`,
+          `Possible gap: ${englishNumber(range, group.sections[0].numbering!.unit)}.`,
           [byNumber.get(before)![0], byNumber.get(after)![0]],
         );
+      }
     }
     if (++processedGroups % 100 === 0) await checkpoint(0.85);
   }

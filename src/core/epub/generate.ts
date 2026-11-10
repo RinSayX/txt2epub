@@ -1,3 +1,4 @@
+import { LocalizedError } from '../../i18n/locale';
 import { strToU8, Zip, ZipDeflate, ZipPassThrough } from 'fflate';
 import type { BookMetadata, Checkpoint, Outline } from '../types';
 import { chapterContentEnd, stripParagraphIndent } from '../paragraphs';
@@ -36,9 +37,10 @@ export async function generateEpub(
   options: EpubExportOptions = {},
 ): Promise<Uint8Array> {
   const title = metadata.title.trim();
-  if (!title) throw new Error('请填写书名后再导出。');
+  if (!title)
+    throw new LocalizedError('请填写书名后再导出。', 'Enter a book title before exporting.');
   if (!/^[a-z]{2,8}(?:-[a-z0-9]{1,8})*$/i.test(metadata.language))
-    throw new Error('请选择有效的书籍语言。');
+    throw new LocalizedError('请选择有效的书籍语言。', 'Choose a valid book language.');
   assertXmlCharacters(title, '书名');
   assertXmlCharacters(metadata.author, '作者');
   let line = 1;
@@ -58,8 +60,14 @@ export async function generateEpub(
     start = end;
     await checkpoint((0.04 * start) / Math.max(1, text.length));
   }
+  const englishBook = /^en(?:-|$)/i.test(metadata.language);
   const sections = outline.sections.map((section) => {
-    const sectionTitle = outline.headingCount === 0 ? title : clean(section.title);
+    const sectionTitle =
+      outline.headingCount === 0
+        ? title
+        : section.lineIndex === null && englishBook
+          ? 'Introduction'
+          : clean(section.title);
     assertXmlCharacters(sectionTitle, '章节标题');
     return { ...section, title: sectionTitle };
   });

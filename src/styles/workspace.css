@@ -71,7 +71,8 @@
 .help-button {
   color: #91968b;
 }
-.github-link {
+.github-link,
+.language-switch {
   display: grid;
   place-items: center;
   width: 44px;
@@ -80,9 +81,14 @@
   border-radius: 6px;
   color: #6f7c6b;
 }
-.github-link:hover {
+.github-link:hover,
+.language-switch:hover {
   background: var(--soft);
   color: var(--green-dark);
+}
+.language-switch {
+  font-size: 12px;
+  font-weight: 600;
 }
 .main {
   max-width: 1512px;
