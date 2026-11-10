@@ -2,7 +2,11 @@ import type { BookMetadata, Section } from '../types';
 import { escapeXml } from './xml';
 
 const XHTML = 'http://www.w3.org/1999/xhtml';
+const OPF = 'http://www.idpf.org/2007/opf';
 const xmlHeader = '<?xml version="1.0" encoding="utf-8"?>';
+
+export const TEXT_DIRECTORY = 'Text';
+export const NAVIGATION_PATH = `${TEXT_DIRECTORY}/nav.xhtml`;
 
 export interface EpubDocument {
   id: string;
@@ -38,12 +42,14 @@ export function renderNavigation(
     group.push(section);
     children.set(section.parentId, group);
   }
+  // NAV is beside the chapters; NCX is in the parent directory.
+  const targetPrefix = ncx ? `${TEXT_DIRECTORY}/` : '';
   let order = 0;
   const render = (parent: string | null, depth: number): string[] =>
     (children.get(parent) ?? []).flatMap((section) => {
       const index = ++order;
       const indent = '  '.repeat(depth);
-      const target = escapeXml(targets.get(section.id)!);
+      const target = escapeXml(targetPrefix + targets.get(section.id)!);
       const title = escapeXml(section.title);
       const subtree = render(section.id, depth + (ncx ? 1 : 2));
       return ncx
@@ -130,8 +136,8 @@ export function renderPackage(
 ): string {
   return [
     xmlHeader,
-    `<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="book-id" xml:lang="${escapeXml(metadata.language)}">`,
-    '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">',
+    `<package version="3.0" unique-identifier="book-id" xml:lang="${escapeXml(metadata.language)}" xmlns="${OPF}">`,
+    `  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="${OPF}">`,
     `    <dc:identifier id="book-id">${uid}</dc:identifier>`,
     `    <dc:title>${escapeXml(title)}</dc:title>`,
     `    <dc:language>${escapeXml(metadata.language)}</dc:language>`,
@@ -142,7 +148,7 @@ export function renderPackage(
     ...(hasCover ? ['    <meta name="cover" content="cover-image" />'] : []),
     '  </metadata>',
     '  <manifest>',
-    '    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav" />',
+    `    <item id="nav" href="${NAVIGATION_PATH}" media-type="application/xhtml+xml" properties="nav" />`,
     '    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml" />',
     ...(hasCover
       ? [

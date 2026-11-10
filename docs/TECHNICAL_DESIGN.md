@@ -67,10 +67,10 @@ TXT 工作台保留原始 File 以便重新解码，文档 Worker 保有解码�
 mimetype
 META-INF/container.xml
 OEBPS/content.opf
-OEBPS/nav.xhtml
 OEBPS/toc.ncx
-OEBPS/text/section-000001.xhtml
-OEBPS/text/section-000002.xhtml
+OEBPS/Text/nav.xhtml
+OEBPS/Text/section-000001.xhtml
+OEBPS/Text/section-000002.xhtml
 …
 OEBPS/cover.xhtml        # 开启封面时
 OEBPS/images/cover.png   # 开启封面时
@@ -78,7 +78,7 @@ OEBPS/images/cover.png   # 开启封面时
 
 - **容器与元数据**：`mimetype` 是首个 ZIP 条目，内容为 `application/epub+zip`，不压缩、无 BOM 或额外字段。OPF 使用 `version="3.0"`，保存书名、语言、UUID 和修改时间；作者留空时省略。参见 [W3C EPUB 3.3 容器与包文档](https://www.w3.org/TR/epub-33/)。
 - **命名与拆片**：按 `documents.length + 1` 为每个内容文件分配 `section-NNNNNN` ID，数字至少六位。简介、分组和续片均独立占号。250 KiB 是正文段落标记的 UTF-8 软目标；阈值不含 XHTML 外壳和首片标题，单个超长段落完整保留。示例见[文件命名与拆片](TXT_TO_EPUB.md#xhtml-文件命名与拆片)。
-- **目录与阅读顺序**：同一目录树生成 NAV、NCX；章节链接指向首片的 `#heading`，续片不重复输出 h1，所有内容文件按顺序写入 manifest 和 spine。附带 NCX 用于旧阅读器兼容，不另产 EPUB2。
+- **目录与阅读顺序**：同一目录树生成 NAV、NCX。NAV 与正文同在 `Text/`，使用同目录相对链接。位于上一层的 NCX 使用带 `Text/` 前缀的链接。两者均指向章节首片的 `#heading`，续片不重复输出 h1，所有内容文件按顺序写入 manifest 和 spine。附带 NCX 用于旧阅读器兼容，不另产 EPUB2。
 - **封面**：Canvas 绘制 600 × 800 的 PNG，预览与生成共用函数。书名从 72 px 开始，按系统字体实际宽度与字素边界换行，必要时缩小；文字块中心距顶部约 240 px。封面资源标记 `cover-image`，封面页在 spine 最前，同时写入旧式 cover meta 和 guide；正文编号不受影响。
 - **样式**：XHTML、OPF、NCX 和 XML 按层级换行缩进。EPUB 不打包 CSS，无样式表引用、style 元素或行内 style；实际显示由阅读器决定。
 - **字符校验**：默认拒绝 XML 不合法字符，正文报错给出完整工作文档的 1 基行号和 0 基 UTF-16 偏移。可选清理只处理工作正文和章节标题的非法 C0（U+0000–0008、U+000B、U+000C、U+000E–001F），保留 TAB、LF、CR；统计按工作文本中出现次数计算，不因标题同时写入多份目录而重复计数。非法元数据和其他不合法 Unicode 仍报错。开启两种清理时，先处理控制字符与段首空白，再判断空行。

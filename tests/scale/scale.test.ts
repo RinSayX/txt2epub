@@ -30,7 +30,9 @@ describe.skipIf(!process.env.RUN_SCALE)('desktop-sized novels', () => {
       const exported = performance.now();
       expect(outline.headingCount).toBe(chapterCount);
       const files = unzipSync(bytes);
-      const chapters = Object.entries(files).filter(([path]) => path.startsWith('OEBPS/text/'));
+      const chapters = Object.entries(files).filter(([path]) =>
+        path.startsWith('OEBPS/Text/section-'),
+      );
       const paragraphCount = chapters.reduce(
         (sum, [, data]) => sum + (new TextDecoder().decode(data).match(/<p>/g) ?? []).length,
         0,
@@ -77,6 +79,8 @@ describe.skipIf(!process.env.RUN_SCALE)('desktop-sized novels', () => {
       language: 'zh-Hans',
     });
     const files = unzipSync(bytes);
-    expect(Object.keys(files).filter((path) => path.startsWith('OEBPS/text/'))).toHaveLength(16000);
+    expect(
+      Object.keys(files).filter((path) => path.startsWith('OEBPS/Text/section-')),
+    ).toHaveLength(16000);
   }, 30000);
 });

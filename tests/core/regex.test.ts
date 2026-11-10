@@ -142,11 +142,15 @@ describe('custom regular expression headings', () => {
         language: 'zh-Hans',
       }),
     );
-    for (const path of ['OEBPS/text/section-000001.xhtml', 'OEBPS/nav.xhtml', 'OEBPS/toc.ncx']) {
+    for (const path of [
+      'OEBPS/Text/section-000001.xhtml',
+      'OEBPS/Text/nav.xhtml',
+      'OEBPS/toc.ncx',
+    ]) {
       expect(strFromU8(files[path])).toContain('第233章 比试 &lt;&amp;&gt;');
       expect(strFromU8(files[path])).not.toContain('233.第233章');
     }
-    expect(strFromU8(files['OEBPS/text/section-000001.xhtml'])).toContain(
+    expect(strFromU8(files['OEBPS/Text/section-000001.xhtml'])).toContain(
       '<p>正文 &lt;&amp;&gt;😀</p>',
     );
   });

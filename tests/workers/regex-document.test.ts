@@ -112,8 +112,8 @@ describe('regex rules in document sessions', () => {
       metadata: { title: '正则书籍', author: '', language: 'zh-Hans' },
     });
     const files = unzipSync(result.bytes);
-    expect(strFromU8(files['OEBPS/nav.xhtml'])).toContain('第233章 比试');
-    expect(strFromU8(files['OEBPS/nav.xhtml'])).not.toContain('233.第233章');
+    expect(strFromU8(files['OEBPS/Text/nav.xhtml'])).toContain('第233章 比试');
+    expect(strFromU8(files['OEBPS/Text/nav.xhtml'])).not.toContain('233.第233章');
   });
 
   it('tests draft rules against the current document without applying them', async () => {

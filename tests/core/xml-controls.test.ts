@@ -41,7 +41,7 @@ describe('XML control character handling', () => {
       }
     }
     const chapter = new DOMParser().parseFromString(
-      strFromU8(files['OEBPS/text/section-000002.xhtml']),
+      strFromU8(files['OEBPS/Text/section-000002.xhtml']),
       'application/xml',
     );
     expect(Array.from(chapter.getElementsByTagName('p')).map((node) => node.textContent)).toEqual([
@@ -50,7 +50,7 @@ describe('XML control character handling', () => {
       '下一段',
     ]);
     expect(chapter.getElementsByTagName('h1')[0].textContent).toBe('第一章 标题');
-    expect(strFromU8(files['OEBPS/nav.xhtml'])).toContain('第一卷 卷');
+    expect(strFromU8(files['OEBPS/Text/nav.xhtml'])).toContain('第一卷 卷');
     expect(strFromU8(files['OEBPS/toc.ncx'])).toContain('<text>第一章 标题</text>');
     expect(outline).toEqual(original);
     expect(sectionPreview(source, outline.sections[1]).text).toContain('\u001A');
@@ -75,7 +75,7 @@ describe('XML control character handling', () => {
       }),
     );
     expect(counts).toEqual([0]);
-    expect(strFromU8(files['OEBPS/text/section-000001.xhtml'])).toContain('😀</p>');
+    expect(strFromU8(files['OEBPS/Text/section-000001.xhtml'])).toContain('😀</p>');
   });
 
   it('continues rejecting damaged Unicode and invalid metadata even when control cleanup is enabled', async () => {

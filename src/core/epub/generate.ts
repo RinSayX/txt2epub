@@ -8,6 +8,8 @@ import {
   removeInvalidXmlControls,
 } from './xml';
 import {
+  NAVIGATION_PATH,
+  TEXT_DIRECTORY,
   renderContainer,
   renderNavigation,
   renderNavigationDocument,
@@ -94,8 +96,9 @@ export async function generateEpub(
     let part = 0;
     const flush = async () => {
       const id = `section-${String(documents.length + 1).padStart(6, '0')}`;
-      const path = `text/${id}.xhtml`;
-      if (part === 0) targets.set(section.id, `${path}#heading`);
+      const filename = `${id}.xhtml`;
+      const path = `${TEXT_DIRECTORY}/${filename}`;
+      if (part === 0) targets.set(section.id, `${filename}#heading`);
       await add(
         `OEBPS/${path}`,
         renderXhtml(
@@ -156,7 +159,7 @@ export async function generateEpub(
     );
     documents.unshift({ id: 'cover-page', path: 'cover.xhtml' });
   }
-  await add('OEBPS/nav.xhtml', renderNavigationDocument(metadata.language, nav));
+  await add(`OEBPS/${NAVIGATION_PATH}`, renderNavigationDocument(metadata.language, nav));
   await add('OEBPS/toc.ncx', renderNcx(sections, uid, title, ncx));
   await add(
     'OEBPS/content.opf',

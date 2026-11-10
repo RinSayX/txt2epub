@@ -206,7 +206,9 @@ describe('document Worker import', () => {
         })
       ).bytes,
     );
-    expect(Object.keys(files).filter((path) => path.startsWith('OEBPS/text/'))).toHaveLength(2);
+    expect(
+      Object.keys(files).filter((path) => path.startsWith('OEBPS/Text/section-')),
+    ).toHaveLength(2);
     for (const [path, bytes] of Object.entries(files)) {
       if (/\.(xhtml|ncx|opf)$/.test(path))
         expect(strFromU8(bytes)).not.toMatch(/第一卷 空分组|第二章 空|第四章 空/);
@@ -289,8 +291,8 @@ describe('document Worker import', () => {
     });
     expect(result.cleanedControlCount).toBe(2);
     const files = unzipSync(result.bytes);
-    expect(strFromU8(files['OEBPS/text/section-000001.xhtml'])).toContain('<p>正文</p>');
-    expect(strFromU8(files['OEBPS/nav.xhtml'])).toContain('第一章 标题');
+    expect(strFromU8(files['OEBPS/Text/section-000001.xhtml'])).toContain('<p>正文</p>');
+    expect(strFromU8(files['OEBPS/Text/nav.xhtml'])).toContain('第一章 标题');
     const preview = await request<Preview>({
       id: 4,
       type: 'preview',
@@ -352,7 +354,7 @@ describe('document Worker import', () => {
         metadata: { title: '空行验证', author: '', language: 'zh-Hans' },
         removeBlankLines,
       });
-      const chapter = strFromU8(unzipSync(result.bytes)['OEBPS/text/section-000001.xhtml']);
+      const chapter = strFromU8(unzipSync(result.bytes)['OEBPS/Text/section-000001.xhtml']);
       expect(chapter.includes('<p>&#160;</p>')).toBe(!removeBlankLines);
       expect(chapter).toContain('<p>首段</p>');
       expect(chapter).toContain('<p>二段</p>');

@@ -41,8 +41,12 @@ describe('EPUB3 export', () => {
     const withoutCover = unzipSync(await generateEpub(text, outline, metadata));
     expect(withoutCover['OEBPS/cover.xhtml']).toBeUndefined();
     expect(withoutCover['OEBPS/images/cover.png']).toBeUndefined();
-    expect(strFromU8(files['OEBPS/nav.xhtml'])).toBe(strFromU8(withoutCover['OEBPS/nav.xhtml']));
-    for (const path of Object.keys(files).filter((path) => path.startsWith('OEBPS/text/'))) {
+    expect(strFromU8(files['OEBPS/Text/nav.xhtml'])).toBe(
+      strFromU8(withoutCover['OEBPS/Text/nav.xhtml']),
+    );
+    for (const path of Object.keys(files).filter((path) =>
+      path.startsWith('OEBPS/Text/section-'),
+    )) {
       expect(files[path]).toEqual(withoutCover[path]);
     }
   });
@@ -58,7 +62,7 @@ describe('EPUB3 export', () => {
     const files = unzipSync(
       await generateEpub(source, await buildOutline(source, DEFAULT_RULES), metadata),
     );
-    const chapter = strFromU8(files['OEBPS/text/section-000001.xhtml']);
+    const chapter = strFromU8(files['OEBPS/Text/section-000001.xhtml']);
     const document = new DOMParser().parseFromString(chapter, 'application/xml');
     expect(chapter).toContain('\n  <head>\n    <title>');
     expect(chapter).toContain('\n  <body>\n    <h1 id="heading">第一章 风雨</h1>\n');
@@ -83,7 +87,7 @@ describe('EPUB3 export', () => {
     const files = unzipSync(
       await generateEpub(source, await buildOutline(source, DEFAULT_RULES), metadata),
     );
-    const nav = strFromU8(files['OEBPS/nav.xhtml']);
+    const nav = strFromU8(files['OEBPS/Text/nav.xhtml']);
     const ncx = strFromU8(files['OEBPS/toc.ncx']);
     expect(nav).toContain('\n      <ol>\n        <li>\n          <a ');
     expect(nav).toContain('\n          <ol>\n            <li>\n              <a ');
@@ -114,7 +118,7 @@ describe('EPUB3 export', () => {
       await generateEpub(source, await buildOutline(source, DEFAULT_RULES), metadata),
     );
     const paragraphs = Object.entries(files)
-      .filter(([path]) => path.startsWith('OEBPS/text/'))
+      .filter(([path]) => path.startsWith('OEBPS/Text/section-'))
       .map(([, bytes]) => {
         const document = new DOMParser().parseFromString(strFromU8(bytes), 'application/xml');
         return Array.from(document.getElementsByTagName('p')).map(
@@ -151,14 +155,21 @@ describe('EPUB3 export', () => {
     }
     const opf = parsed.get('OEBPS/content.opf')!;
     expect(opf.documentElement.getAttribute('version')).toBe('3.0');
+    expect(strFromU8(files['OEBPS/content.opf']).split('\n').slice(1, 3)).toEqual([
+      '<package version="3.0" unique-identifier="book-id" xml:lang="zh-CN" xmlns="http://www.idpf.org/2007/opf">',
+      '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">',
+    ]);
     expect(opf.getElementsByTagName('dc:title')[0].textContent).toBe(metadata.title);
     expect(opf.getElementsByTagName('dc:language')[0].textContent).toBe('zh-CN');
     const items = [...Array.from(opf.getElementsByTagName('item'))];
+    expect(
+      items.find((item) => item.getAttribute('properties') === 'nav')?.getAttribute('href'),
+    ).toBe('Text/nav.xhtml');
     const ids = new Set(items.map((item) => item.getAttribute('id')));
     for (const item of items) expect(files[`OEBPS/${item.getAttribute('href')}`]).toBeDefined();
     for (const reference of Array.from(opf.getElementsByTagName('itemref')))
       expect(ids.has(reference.getAttribute('idref'))).toBe(true);
-    const nav = parsed.get('OEBPS/nav.xhtml')!;
+    const nav = parsed.get('OEBPS/Text/nav.xhtml')!;
     const ncx = parsed.get('OEBPS/toc.ncx')!;
     const navLinks = Array.from(nav.getElementsByTagName('a')).map((anchor) =>
       anchor.getAttribute('href'),
@@ -166,11 +177,11 @@ describe('EPUB3 export', () => {
     const ncxLinks = Array.from(ncx.getElementsByTagName('content')).map((content) =>
       content.getAttribute('src'),
     );
-    expect(navLinks).toEqual(ncxLinks);
+    expect(ncxLinks).toEqual(navLinks.map((href) => `Text/${href}`));
     expect(navLinks).toHaveLength(outline.sections.length);
     for (const href of navLinks) {
       const [path, fragment] = href!.split('#');
-      const doc = parsed.get(`OEBPS/${path}`)!;
+      const doc = parsed.get(`OEBPS/Text/${path}`)!;
       expect(
         Array.from(doc.getElementsByTagName('h1')).some(
           (heading) => heading.getAttribute('id') === fragment,
@@ -198,7 +209,7 @@ describe('EPUB3 export', () => {
     const source = `第一章 长篇\n${paragraphs.join('\n')}\n\n \t　\n`;
     const outline = await buildOutline(source, DEFAULT_RULES);
     const files = unzipSync(await generateEpub(source, outline, metadata));
-    const paths = Object.keys(files).filter((path) => path.startsWith('OEBPS/text/'));
+    const paths = Object.keys(files).filter((path) => path.startsWith('OEBPS/Text/section-'));
     expect(paths.length).toBeGreaterThan(1);
     const result = paths.flatMap((path) =>
       Array.from(
@@ -209,7 +220,7 @@ describe('EPUB3 export', () => {
     );
     expect(result).toEqual(paragraphs);
     const nav = new DOMParser().parseFromString(
-      strFromU8(files['OEBPS/nav.xhtml']),
+      strFromU8(files['OEBPS/Text/nav.xhtml']),
       'application/xml',
     );
     expect(nav.getElementsByTagName('a')).toHaveLength(1);
@@ -225,7 +236,7 @@ describe('EPUB3 export', () => {
     expect(strFromU8(files['OEBPS/content.opf'])).not.toContain('dc:creator');
     expect(
       new DOMParser()
-        .parseFromString(strFromU8(files['OEBPS/text/section-000001.xhtml']), 'application/xml')
+        .parseFromString(strFromU8(files['OEBPS/Text/section-000001.xhtml']), 'application/xml')
         .getElementsByTagName('h1')[0].textContent,
     ).toBe(metadata.title);
   });

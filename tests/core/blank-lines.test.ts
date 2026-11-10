@@ -9,7 +9,7 @@ const metadata = { title: '空行清理验证', author: '', language: 'zh-Hans' 
 function paragraphs(bytes: Uint8Array) {
   const files = unzipSync(bytes);
   return Object.entries(files)
-    .filter(([path]) => path.startsWith('OEBPS/text/'))
+    .filter(([path]) => path.startsWith('OEBPS/Text/section-'))
     .flatMap(([, content]) => {
       const document = new DOMParser().parseFromString(strFromU8(content), 'application/xml');
       return Array.from(document.getElementsByTagName('p')).map((node) => node.textContent);
@@ -27,11 +27,12 @@ describe('optional blank line cleanup', () => {
     });
     expect(paragraphs(bytes)).toEqual(['首段  内部空格 \t', '二段 <&> 😀', '第三段']);
     const files = unzipSync(bytes);
-    expect(strFromU8(files['OEBPS/text/section-000001.xhtml'])).toContain(
+    expect(strFromU8(files['OEBPS/Text/section-000001.xhtml'])).toContain(
       '<h1 id="heading">第一卷 分组</h1>',
     );
     for (const [path, content] of Object.entries(files)) {
-      if (path.startsWith('OEBPS/text/')) expect(strFromU8(content)).not.toContain('<p>&#160;</p>');
+      if (path.startsWith('OEBPS/Text/section-'))
+        expect(strFromU8(content)).not.toContain('<p>&#160;</p>');
     }
     expect(outline).toEqual(original);
     expect(paragraphs(await generateEpub(source, outline, metadata))).toContain('\u00A0');
@@ -52,7 +53,7 @@ describe('optional blank line cleanup', () => {
     );
     expect(paragraphs(bytes)).toEqual(expected);
     expect(
-      Object.keys(unzipSync(bytes)).filter((path) => path.startsWith('OEBPS/text/')).length,
+      Object.keys(unzipSync(bytes)).filter((path) => path.startsWith('OEBPS/Text/section-')).length,
     ).toBeGreaterThan(1);
   });
 
