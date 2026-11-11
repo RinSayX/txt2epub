@@ -53,7 +53,7 @@ export default function ImportPanel({ disabled, onPickFile, onImport }: Props) {
       <h2>
         {dragging
           ? t('松开，故事就从这里开始', 'Drop to import your novel')
-          : t('把你的小说，放在这里', 'Import a text novel')}
+          : t('把你的书，放在这里', 'Import a text novel')}
       </h2>
       <p>
         {t('拖入 TXT 文件，或点击选择', 'Drop a TXT file here or choose one')}

@@ -636,7 +636,7 @@ export default function App() {
               <ArrowRight size={13} />
               <span>
                 <b>03</b>
-                {t('带走电子书', 'Export ebook')}
+                {t('导出电子书', 'Export ebook')}
               </span>
             </div>
           )}
